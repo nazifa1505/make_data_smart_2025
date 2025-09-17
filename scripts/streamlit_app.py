@@ -1,4 +1,4 @@
-# streamlit_app.py - Complete Enhanced Valgomat Analysis
+# streamlit_app.py - Improved User-Friendly Valgomat Analysis
 import os
 import math
 import textwrap
@@ -10,287 +10,169 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from plotly.subplots import make_subplots
 
+# Configuration and color scheme
 BG = "#fcf6ee"
 COL_NEG, COL_NEU, COL_POS = "#ff8c45", "#ffd865", "#97d2ec"
 COLORS = [COL_NEG, COL_NEU, COL_POS]
 
 st.set_page_config(
-    page_title="Valgomat – utforsker", 
+    page_title="Valgomat-utforsker", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Apply matplotlib theme
-def apply_simple_theme():
-    plt.rcParams.update({
-        "figure.dpi": 120,
-        "axes.grid": True,
-        "grid.linestyle": ":",
-        "grid.color": "#cccccc",
-        "axes.titlesize": 12,
-        "axes.labelsize": 10,
-        "xtick.labelsize": 9,
-        "ytick.labelsize": 9,
-        "figure.autolayout": True,
-        "figure.facecolor": BG,
-        "axes.facecolor": BG,
-        "axes.prop_cycle": plt.cycler(color=COLORS),
-    })
+# Load CSS styling
+def load_css():
+    try:
+        with open("styles.css", "r", encoding="utf-8") as f:
+            css = f.read()
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        # Fallback: minimal inline CSS if file not found
+        st.markdown(f"""
+        <style>
+        .stApp {{ background-color: {BG} !important; color: #111111 !important; }}
+        .explanation-card {{ 
+            background: linear-gradient(135deg, #e8f4f8, #f0f8ff);
+            border-left: 4px solid {COL_POS};
+            padding: 15px; border-radius: 8px; margin: 10px 0;
+        }}
+        .warning-box {{ 
+            background: #fff3cd; border-left: 4px solid #f39c12;
+            padding: 12px; border-radius: 8px; margin: 10px 0;
+        }}
+        .critical-info {{
+            background: #f8d7da; border-left: 4px solid #dc3545;
+            padding: 12px; border-radius: 8px; margin: 10px 0;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
 
-apply_simple_theme()
+load_css()
 
-# --- Global styling - Force Light Mode
-st.markdown(
-    f"""
-    <style>
-      /* Force light theme globally */
-      .stApp {{
-        background-color: {BG} !important;
-        color: #111111 !important;
-      }}
-      
-      /* Main content area */
-      .main .block-container {{
-        background-color: {BG} !important;
-        color: #111111 !important;
-        padding-top: 1rem;
-      }}
-      
-      /* Header and navigation */
-      .stApp > header {{
-        background-color: {BG} !important;
-      }}
-      .stApp > .main {{
-        background-color: {BG} !important;
-      }}
-      div[data-testid="stAppViewContainer"] {{
-        background-color: {BG} !important;
-      }}
-      div[data-testid="stHeader"] {{
-        background-color: {BG} !important;
-      }}
-      div[data-testid="stToolbar"] {{
-        background-color: {BG} !important;
-      }}
-      div[data-testid="stDecoration"] {{
-        background-color: {BG} !important;
-      }}
-      
-      /* Force all text to be dark */
-      .stApp, .stApp * {{
-        color: #111111 !important;
-      }}
-      
-      h1, h2, h3, h4, h5, h6 {{
-        color: #111111 !important;
-      }}
-      
-      p, li, span, div, label {{
-        color: #111111 !important;
-      }}
-      
-      .stMarkdown, .stMarkdown * {{
-        color: #111111 !important;
-      }}
-      
-      /* Sidebar */
-      .css-1d391kg, .css-1rs6os {{
-        background-color: #f0e6d6 !important;
-        color: #111111 !important;
-      }}
-      
-      section[data-testid="stSidebar"] {{
-        background-color: #f0e6d6 !important;
-      }}
-      
-      section[data-testid="stSidebar"] * {{
-        color: #111111 !important;
-      }}
-      
-      /* Metrics */
-      div[data-testid="metric-container"] {{
-        background-color: white !important;
-        border: 1px solid #ddd !important;
-        color: #111111 !important;
-      }}
-      
-      div[data-testid="metric-container"] * {{
-        color: #111111 !important;
-      }}
-      
-      /* Buttons */
-      .stButton > button {{
-        background-color: white !important;
-        color: #111111 !important;
-        border: 1px solid #ddd !important;
-      }}
-      
-      .stButton > button:hover {{
-        background-color: #f0f0f0 !important;
-        color: #111111 !important;
-      }}
-      
-      /* Tabs */
-      .stTabs [data-baseweb="tab-list"] {{
-        background-color: white !important;
-      }}
-      
-      .stTabs [data-baseweb="tab"] {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      
-      .stTabs [data-baseweb="tab"]:hover {{
-        background-color: #f0f0f0 !important;
-        color: #111111 !important;
-      }}
-      
-      .stTabs [aria-selected="true"] {{
-        background-color: {COL_POS} !important;
-        color: #111111 !important;
-      }}
-      
-      /* Fix dropdown menu backgrounds */
-      .stSelectbox > div > div {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      .stSelectbox [data-testid="stSelectbox"] {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      .stSelectbox [data-baseweb="select"] {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      .stSelectbox [data-baseweb="select"] > div {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      .stSelectbox [data-baseweb="select"] span {{
-        color: #111111 !important;
-      }}
-      
-      /* Dropdown options */
-      .stSelectbox [data-baseweb="menu"] {{
-        background-color: white !important;
-      }}
-      .stSelectbox [data-baseweb="menu"] ul {{
-        background-color: white !important;
-      }}
-      .stSelectbox [data-baseweb="menu"] li {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      .stSelectbox [data-baseweb="menu"] li:hover {{
-        background-color: #f0e6d6 !important;
-        color: #111111 !important;
-      }}
-      
-      /* Additional selectbox styling */
-      div[data-baseweb="select"] {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      div[data-baseweb="select"] > div {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      div[data-baseweb="popover"] {{
-        background-color: white !important;
-      }}
-      div[data-baseweb="popover"] ul {{
-        background-color: white !important;
-      }}
-      div[data-baseweb="popover"] li {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      div[data-baseweb="popover"] li:hover {{
-        background-color: #f0e6d6 !important;
-        color: #111111 !important;
-      }}
-      
-      /* Radio buttons */
-      .stRadio > div {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      
-      .stRadio label {{
-        color: #111111 !important;
-      }}
-      
-      /* Sliders */
-      .stSlider > div {{
-        color: #111111 !important;
-      }}
-      
-      .stSlider label {{
-        color: #111111 !important;
-      }}
-      
-      /* Text inputs */
-      .stTextInput > div > div > input {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      
-      .stTextInput label {{
-        color: #111111 !important;
-      }}
-      
-      /* Number inputs */
-      .stNumberInput > div > div > input {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      
-      .stNumberInput label {{
-        color: #111111 !important;
-      }}
-      
-      /* Dataframes */
-      .stDataFrame {{
-        background-color: white !important;
-      }}
-      
-      /* Expanders */
-      .streamlit-expanderHeader {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      
-      .streamlit-expanderContent {{
-        background-color: white !important;
-        color: #111111 !important;
-      }}
-      
-      /* Success/warning/error messages */
-      .stSuccess {{
-        background-color: #d4edda !important;
-        color: #155724 !important;
-      }}
-      
-      .stWarning {{
-        background-color: #fff3cd !important;
-        color: #856404 !important;
-      }}
-      
-      .stError {{
-        background-color: #f8d7da !important;
-        color: #721c24 !important;
-      }}
-      
-      .stInfo {{
-        background-color: #d1ecf1 !important;
-        color: #0c5460 !important;
-      }}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Utility functions for creating user-friendly UI elements
+def create_explanation_card(title, content, icon="💡", card_type="info"):
+    """Create informative explanation cards with different styles"""
+    if card_type == "warning":
+        css_class = "warning-box"
+        bg_color = "#fff3cd"
+        border_color = "#f39c12"
+    elif card_type == "critical":
+        css_class = "critical-info"  
+        bg_color = "#f8d7da"
+        border_color = "#dc3545"
+    else:
+        css_class = "explanation-card"
+        bg_color = "linear-gradient(135deg, #e8f4f8, #f0f8ff)"
+        border_color = COL_POS
+    
+    st.markdown(f"""
+    <div class="{css_class}">
+        <h4>{icon} {title}</h4>
+        <p>{content}</p>
+    </div>
+    """, unsafe_allow_html=True)
 
+def create_how_to_read_box(graph_type):
+    """Create 'How to read this graph' explanations"""
+    explanations = {
+        "polarization": """
+        <strong>Slik leser du polariseringsgrafen:</strong><br>
+        • <strong>Hvert punkt</strong> = Ett spørsmål fra valgomaten<br>
+        • <strong>Høyt oppe</strong> = Partiene er svært uenige om dette spørsmålet<br>
+        • <strong>Til høyre</strong> = De fleste partier støtter forslaget<br>
+        • <strong>Til venstre</strong> = De fleste partier er imot forslaget<br>
+        • <strong>Størrelse på punkt</strong> = Hvor kontroversielt spørsmålet er
+        """,
+        "party_comparison": """
+        <strong>Slik leser du sammenligningen:</strong><br>
+        • <strong>Stolpehøyde</strong> = Sum av partiets posisjoner<br>
+        • <strong>Sammenlign mønster</strong>, ikke eksakte tall<br>
+        • <strong>Rangering</strong> er mer pålitelig enn absolutte verdier<br>
+        • <strong>Forskjellige spørsmål</strong> = kan ikke sammenligne direkte
+        """,
+        "party_positions": """
+        <strong>Slik leser du partiposisjoner:</strong><br>
+        • <strong>+2</strong> = Partiet er sterkt FOR forslaget<br>
+        • <strong>+1</strong> = Partiet er moderat FOR<br>
+        • <strong>0</strong> = Partiet er nøytral/usikker<br>
+        • <strong>-1</strong> = Partiet er moderat MOT<br>
+        • <strong>-2</strong> = Partiet er sterkt MOT forslaget
+        """
+    }
+    
+    if graph_type in explanations:
+        st.markdown(f"""
+        <div class="explanation-card">
+            <details>
+                <summary><strong>🤔 Hvordan lese denne grafen?</strong></summary>
+                <p style="margin-top: 8px;">{explanations[graph_type]}</p>
+            </details>
+        </div>
+        """, unsafe_allow_html=True)
+
+def create_data_context_warning():
+    """Create a prominent warning about data limitations"""
+    st.markdown("""
+    <div class="critical-info">
+        <h4> Viktig å forstå om dataene</h4>
+        <p><strong>Dette viser partienes standpunkter, IKKE folks svar!</strong></p>
+        <p>Tallene kommer fra hva partiene har svart på valgomatspørsmål:</p>
+        <ul>
+            <li><strong>+2</strong> = Partiet er sterkt enig i forslaget</li>
+            <li><strong>0</strong> = Partiet er nøytral eller usikker</li>
+            <li><strong>-2</strong> = Partiet er sterkt uenig i forslaget</li>
+        </ul>
+        <p>Vi har <em>ikke</em> data fra vanlige folk som har tatt valgomaten.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+def create_tv2_only_explanation():
+    """Explain why some analyses use only TV2 data"""
+    create_explanation_card(
+        "Hvorfor bare TV2-data?",
+        "Vektings- og scenario-analyser krever tematiske kategorier (økonomi, helse, osv.). " +
+        "TV2-data har denne informasjonen, mens NRK-data mangler kategorisering. " +
+        "Dette er ikke en svakhet, men reflekterer at ulike kilder strukturerer data forskjellig.",
+        "ℹ️"
+    )
+
+def friendly_translate_stats(mu, std):
+    """Translate statistics to friendly language"""
+    # Translate direction (mu)
+    if abs(mu) < 0.2:
+        direction = "Partiene er delte"
+        direction_emoji = "⚖️"
+    elif mu > 0.5:
+        direction = "De fleste partier støtter dette"
+        direction_emoji = "👍"
+    elif mu > 0:
+        direction = "Svakt flertall støtter"
+        direction_emoji = "📈"
+    elif mu < -0.5:
+        direction = "De fleste partier er imot"
+        direction_emoji = "👎"
+    else:
+        direction = "Svakt flertall er imot"
+        direction_emoji = "📉"
+    
+    # Translate disagreement (std)
+    if std < 0.5:
+        agreement = "bred enighet"
+        agreement_emoji = "🤝"
+    elif std < 1.0:
+        agreement = "noe uenighet"
+        agreement_emoji = "⚡"
+    elif std < 1.5:
+        agreement = "mye uenighet"
+        agreement_emoji = "🔥"
+    else:
+        agreement = "dyp splittelse"
+        agreement_emoji = "💥"
+    
+    return f"{direction_emoji} {direction} ({agreement_emoji} {agreement})"
+
+# Data loading and processing functions
 @st.cache_data
 def load_files():
     parties = [p.strip() for p in open("figs/parties.txt", encoding="utf-8").read().splitlines() if p.strip()]
@@ -308,23 +190,15 @@ def wrap(text, width=70, lines=2):
         w[-1] += " …"
     return "<br>".join(w)
 
-def prep(df, parties):
+def prep_data_with_friendly_labels(df, parties):
+    """Prepare data with user-friendly labels and explanations"""
     out = df.copy()
-    out["mu"]  = out[parties].mean(axis=1)
-    out["var"] = out[parties].var(axis=1)
-    out["std"] = out[parties].std(axis=1)
-    return out
-
-# Enhanced prep function with political insights
-def prep_with_insights(df, parties):
-    """Enhanced prep function with political insights"""
-    out = df.copy()
-    out["mu"] = out[parties].mean(axis=1)
-    out["var"] = out[parties].var(axis=1)
-    out["std"] = out[parties].std(axis=1)
+    out["avg_position"] = out[parties].mean(axis=1)
+    out["disagreement"] = out[parties].std(axis=1)
+    out["disagreement_squared"] = out[parties].var(axis=1)
     
-    # Political characterization
-    out["political_lean"] = out["mu"].apply(lambda x:
+    # User-friendly labels
+    out["direction_label"] = out["avg_position"].apply(lambda x:
         "Sterkt støttende" if x > 1.0 else
         "Moderat støttende" if x > 0.3 else
         "Delt/nøytral" if abs(x) <= 0.3 else
@@ -332,62 +206,19 @@ def prep_with_insights(df, parties):
         "Sterkt kritisk"
     )
     
-    out["consensus_level"] = out["std"].apply(lambda x:
+    out["agreement_label"] = out["disagreement"].apply(lambda x:
         "Bred enighet" if x < 0.5 else
         "Noe uenighet" if x < 0.8 else
         "Betydelig uenighet" if x < 1.2 else
         "Dyp polarisering"
     )
     
-    # Polarization score combining direction and variance
-    out["polarization_score"] = np.sqrt(out["mu"]**2 * 0.5 + out["var"])
+    out["friendly_summary"] = out.apply(
+        lambda row: friendly_translate_stats(row["avg_position"], row["disagreement"]), 
+        axis=1
+    )
     
     return out
-
-def calculate_party_profiles(df, parties):
-    """Calculate comprehensive party political profiles"""
-    profiles = {}
-    
-    for party in parties:
-        party_positions = df[party]
-        
-        profiles[party] = {
-            'avg_position': party_positions.mean(),
-            'consistency': 1 / (party_positions.std() + 0.001),  # Higher = more consistent
-            'extreme_positions': (abs(party_positions) > 1.5).mean(),  # Proportion of strong positions
-            'positive_bias': (party_positions > 0.5).mean(),  # Tendency to agree
-            'negative_bias': (party_positions < -0.5).mean(),  # Tendency to disagree
-            'centrist_tendency': (abs(party_positions) < 0.5).mean()  # Moderate positions
-        }
-    
-    return pd.DataFrame(profiles).T
-
-def analyze_source_characteristics(nrk_df, tv2_df, parties):
-    """Analyze what each source reveals about political discourse"""
-    
-    nrk_analysis = prep_with_insights(nrk_df, parties)
-    tv2_analysis = prep_with_insights(tv2_df, parties)
-    
-    source_comparison = {
-        'NRK': {
-            'avg_polarization': nrk_analysis['polarization_score'].mean(),
-            'high_consensus_questions': (nrk_analysis['std'] < 0.5).mean(),
-            'polarizing_questions': (nrk_analysis['std'] > 1.2).mean(),
-            'positive_leaning_questions': (nrk_analysis['mu'] > 0.3).mean(),
-            'negative_leaning_questions': (nrk_analysis['mu'] < -0.3).mean(),
-            'total_questions': len(nrk_analysis)
-        },
-        'TV2': {
-            'avg_polarization': tv2_analysis['polarization_score'].mean(),
-            'high_consensus_questions': (tv2_analysis['std'] < 0.5).mean(),
-            'polarizing_questions': (tv2_analysis['std'] > 1.2).mean(),
-            'positive_leaning_questions': (tv2_analysis['mu'] > 0.3).mean(),
-            'negative_leaning_questions': (tv2_analysis['mu'] < -0.3).mean(),
-            'total_questions': len(tv2_analysis)
-        }
-    }
-    
-    return source_comparison, nrk_analysis, tv2_analysis
 
 def color_map(mu):
     if mu < -0.2: return COL_NEG
@@ -398,1660 +229,978 @@ def size_scale(x, smin=10, smax=28):
     x = (x - x.min()) / (x.max() - x.min() + 1e-9)
     return smin + x*(smax - smin)
 
-# Simulation functions for data quality demos
-def simulate_ai_confidence_degradation(quality_score):
-    """Simulate how AI confidence degrades with poor data quality"""
-    base_confidence = 95
-    degradation = (100 - quality_score) * 0.8
-    return max(20, base_confidence - degradation)
-
-def simulate_recommendation_accuracy(missing_data_pct):
-    """Simulate how recommendation accuracy drops with missing data"""
-    base_accuracy = 92
-    accuracy_loss = missing_data_pct * 0.6
-    return max(45, base_accuracy - accuracy_loss)
-
-def generate_biased_vs_unbiased_data(parties, bias_factor=0.3):
-    """Generate simulated data showing bias effects"""
-    np.random.seed(42)
-    unbiased = np.random.normal(0, 1, len(parties))
-    biased = unbiased + np.random.normal(bias_factor, 0.5, len(parties))
-    return unbiased, biased
-
-def create_explanation_card(title, content, icon="💡"):
-    st.markdown(f"""
-    <div style="
-        background: linear-gradient(135deg, #e8f4f8, #f0f8ff);
-        border-left: 4px solid {COL_POS};
-        padding: 15px;
-        border-radius: 8px;
-        margin: 10px 0;
-    ">
-        <h4 style="color: #111111; margin: 0 0 8px 0;">{icon} {title}</h4>
-        <p style="color: #333333; margin: 0; font-size: 14px;">{content}</p>
-    </div>
-    """, unsafe_allow_html=True)
+def calculate_quality_scores(parties, nrk, tv2):
+    """Calculate actual data quality scores"""
+    scores = {}
+    
+    # 1. Nøyaktighet - basert på konsistens mellom kilder
+    if len(parties) > 0:
+        nrk_sample = nrk.head(15)[parties].mean()
+        tv2_sample = tv2.head(15)[parties].mean()
+        consistency = 1 - abs(nrk_sample - tv2_sample).mean() / 4  # Normalize to 0-1
+        scores["Nøyaktighet"] = max(0, min(100, consistency * 100))
+    else:
+        scores["Nøyaktighet"] = 85
+    
+    # 2. Kompletthet - sjekk for manglende verdier
+    total_cells = len(nrk) * len(parties) + len(tv2) * len(parties)
+    missing_cells = nrk[parties].isna().sum().sum() + tv2[parties].isna().sum().sum()
+    completeness = 1 - (missing_cells / total_cells) if total_cells > 0 else 1
+    scores["Kompletthet"] = max(0, min(100, completeness * 100))
+    
+    # 3. Konsistens - variabilitet i data
+    nrk_std = nrk[parties].std().mean()
+    tv2_std = tv2[parties].std().mean()
+    avg_std = (nrk_std + tv2_std) / 2
+    consistency_score = max(0, 100 - avg_std * 25)  # Lower std = higher consistency
+    scores["Konsistens"] = consistency_score
+    
+    # 4. Aktualitet - anta dataene er 6 måneder gamle
+    months_old = 6
+    timeliness = max(0, 100 - months_old * 2)
+    scores["Aktualitet"] = timeliness
+    
+    # 5. Validitet - sjekk om verdier er i forventet range [-2, 2]
+    all_values = pd.concat([nrk[parties].stack(), tv2[parties].stack()]).dropna()
+    valid_values = all_values[(all_values >= -2) & (all_values <= 2)]
+    validity = len(valid_values) / len(all_values) * 100 if len(all_values) > 0 else 95
+    scores["Validitet"] = validity
+    
+    # 6. Unikalitet - estimat basert på antall spørsmål vs kategorier
+    if 'Kategori' in tv2.columns:
+        unique_categories = tv2['Kategori'].nunique()
+        total_questions = len(tv2)
+        # Forvent ~3-5 spørsmål per kategori som optimalt
+        expected_ratio = unique_categories * 4
+        uniqueness = min(100, (expected_ratio / total_questions) * 100) if total_questions > 0 else 90
+    else:
+        uniqueness = 90
+    scores["Unikalitet"] = uniqueness
+    
+    return scores
 
 # Load data
 parties, nrk, tv2 = load_files()
 
-# --- MAIN NAVIGATION ---
-st.title("Valgomat – utforsker")
+# Main app
+st.title("🗳️ Valgomat-utforsker")
+st.subheader("Utforsk hvordan norske partier posisjonerer seg politisk")
 
-# Enhanced tab structure combining original functionality with new insights
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
-    "📊 Polarisering (Hovedvisning)", 
-    "🎯 Politiske Profiler",
-    "📈 Kategori-oversikt", 
-    "⚖️ NRK vs TV2", 
-    "🔧 Vektingseffekt", 
-    "🎯 Scenario-analyse",
-    "🔬 Diskurs-analyse",
-    "🤖 AI & Datakvalitet"
+# Data context warning at the top
+create_data_context_warning()
+
+# Navigation tabs with clearer names
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    "🎯 Hva splitter partiene?", 
+    "📊 Sammenlign datakilder",
+    "📋 Temaoversikt (TV2)",
+    "⚖️ Vektingseffekter", 
+    "📈 Scenario-analyse",
+    "🤖 AI & Datakvalitet",
+    "📖 Metodikk"
 ])
 
 with tab1:
-    st.header("Spørsmål som splitter: polariseringsanalyse")
+    st.header("Hvilke spørsmål skaper mest uenighet?")
+    
+    create_explanation_card(
+        "Hva viser denne analysen?",
+        "Vi ser på valgomatspørsmål og finner ut hvilke som skaper mest politisk splittelse. " +
+        "Noen forslag får bred støtte, andre deler partiene på midten.",
+        "🔍"
+    )
     
     with st.sidebar:
-        st.header("Kontroller")
-        dataset = st.radio("Datasett", ["NRK (uten kategorier)","TV 2 (med kategorier)"])
-        top_k   = st.slider("Antall topp-punkter å merke", 3, 12, 8, 1)
-        wrap_w  = st.slider("Linjelengde (tooltip/tekst)", 40, 100, 70, 2)
-        show_labels = st.toggle("Vis nummer på topp-punkter", value=True)
+        st.header("Innstillinger")
+        dataset = st.radio("Velg datasett", ["NRK", "TV2"])
         
-        # Enhanced view options
-        st.subheader("Visningsalternativer")
-        view_mode = st.radio("Analysemodus", 
-                           ["Klassisk polarisering", "Politisk karakterisering", "Partifordeling"])
+        if dataset == "NRK":
+            st.info("💡 NRK-data har ikke tematiske kategorier")
+        else:
+            st.info("💡 TV2-data er organisert i tema som familie, økonomi, osv.")
         
-        st.caption("Bakgrunn = #fcf6ee  •  Palett = oransje/gul/blå")
+        top_k = st.slider("Vis topp-punkter", 5, 15, 8)
+        show_numbers = st.toggle("Vis nummerering på punkter", value=True)
 
-    left, right = st.columns([3.5, 2])
-
-    # --- Velg df
-    if dataset.startswith("NRK"):
-        df = prep_with_insights(nrk, parties) if view_mode != "Klassisk polarisering" else prep(nrk, parties)
-        extra_cols = []
-    else:
-        df = prep_with_insights(tv2, parties) if view_mode != "Klassisk polarisering" else prep(tv2, parties)
-        extra_cols = ["Kategori"]
-
-    if view_mode == "Klassisk polarisering":
-        # Original polarization scatter (Plotly)
-        df["color"] = df["mu"].apply(color_map)
-        df["size"]  = size_scale(df["var"])
-
-        median_var = float(df["var"].median())
-        median_std = float(df["std"].median())
-
-        hover_cols = ["Spm", "mu", "var", "std"] + extra_cols
-        df["Spm_wrapped"] = df["Spm"].apply(lambda t: wrap(t, width=wrap_w, lines=5))
-
+    # Select and prepare data
+    current_data = nrk if dataset == "NRK" else tv2
+    df = prep_data_with_friendly_labels(current_data, parties)
+    
+    col_left, col_right = st.columns([3, 2])
+    
+    with col_left:
+        # Create main visualization
+        create_how_to_read_box("polarization")
+        
+        df["color"] = df["avg_position"].apply(color_map)
+        df["size"] = size_scale(df["disagreement_squared"])
+        
+        # Create the plot
         fig = px.scatter(
-            df,
-            x="mu", y="var",
+            df.head(50),  # Limit to first 50 for performance
+            x="avg_position", 
+            y="disagreement",
             size="size",
-            color="color",
-            color_discrete_sequence=[COL_NEG, COL_NEU, COL_POS],
-            hover_data=hover_cols,
-        )
-        fig.update_traces(marker=dict(color=df["color"], line=dict(width=0.6, color="black")), selector=dict(mode="markers"))
-        fig.update_traces(hovertemplate=
-            "<b>%{customdata[0]}</b><br>"  # Spm
-            "μ=%{customdata[1]:+.2f}&nbsp;&nbsp;σ²=%{customdata[2]:.2f}&nbsp;&nbsp;σ=%{customdata[3]:.2f}"
-            + ("<br>Kategori=%{customdata[4]}" if extra_cols else "") +
-            "<extra></extra>"
-        )
-
-        # median-linje + x=0
-        fig.add_hline(y=median_var, line_dash="dash", line_color="gray", opacity=0.8)
-        fig.add_vline(x=0, line_dash="dash", line_color="gray", opacity=0.8)
-
-        fig.update_layout(
-            title="Spørsmål som splitter: retning (μ) vs. uenighet (σ²)",
-            xaxis_title="Retning (snitt, μ)  ← negativ | positiv →",
-            yaxis_title="Uenighet (varians, σ²)",
-            xaxis=dict(title_font=dict(color="#111111"), tickfont=dict(color="#111111")),
-            yaxis=dict(title_font=dict(color="#111111"), tickfont=dict(color="#111111")),
-            plot_bgcolor=BG, paper_bgcolor=BG,
-            legend=dict(title="", orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-            margin=dict(l=40, r=20, t=60, b=40),
-            showlegend=False
-        )
-
-        # merk topp-K
-        top = df.nlargest(top_k, "var").copy().reset_index(drop=True)
-        
-    elif view_mode == "Politisk karakterisering":
-        # Enhanced political characterization view
-        df["color"] = df["political_lean"].apply(lambda x: 
-            COL_NEG if "kritisk" in x else COL_POS if "støttende" in x else COL_NEU)
-        df["size"] = size_scale(df["polarization_score"])
-
-        hover_cols = ["Spm", "political_lean", "consensus_level", "polarization_score"] + extra_cols
-
-        fig = px.scatter(
-            df,
-            x="mu", y="polarization_score",
-            size="size",
-            color="consensus_level",
+            color="agreement_label",
             color_discrete_sequence=[COL_POS, COL_NEU, COL_NEG, "#ff4444"],
-            hover_data=hover_cols,
+            hover_data=["Smp"] if "Smp" in df.columns else ["Spm"],
+            title="Politisk splittelse: Retning vs. Uenighet"
         )
         
+        # Customize plot
+        fig.update_traces(
+            marker=dict(line=dict(width=1, color="white")),
+            hovertemplate="<b>%{customdata[0]}</b><br>" + 
+                         "Gjennomsnitt: %{x:.2f}<br>" +
+                         "Uenighet: %{y:.2f}<br>" +
+                         "<extra></extra>"
+        )
+        
+        # Add reference lines
+        fig.add_vline(x=0, line_dash="dash", line_color="gray", opacity=0.7)
+        fig.add_hline(y=df["disagreement"].median(), line_dash="dash", line_color="gray", opacity=0.7)
+        
         fig.update_layout(
-            title="Politisk karakterisering: retning vs. total polarisering",
-            xaxis_title="Politisk retning ← Kritisk | Støttende →",
-            yaxis_title="Total polarisering",
-            plot_bgcolor=BG, paper_bgcolor=BG,
+            xaxis_title="Partienes gjennomsnittlige posisjon ← Imot | For →",
+            yaxis_title="Hvor mye er partiene uenige?",
+            plot_bgcolor=BG,
+            paper_bgcolor=BG,
+            font=dict(color="#111111"),
             showlegend=True
         )
         
-        top = df.nlargest(top_k, "polarization_score").copy().reset_index(drop=True)
+        # Add top K annotations if requested
+        if show_numbers:
+            top_controversial = df.nlargest(top_k, "disagreement").reset_index(drop=True)
+            
+            for i, row in enumerate(top_controversial.itertuples(), 1):
+                fig.add_annotation(
+                    x=row.avg_position,
+                    y=row.disagreement,
+                    text=str(i),
+                    showarrow=False,
+                    font=dict(size=12, color="white"),
+                    bgcolor="rgba(0,0,0,0.7)",
+                    bordercolor="white",
+                    borderwidth=1
+                )
         
-    else:  # Partifordeling
-        # Show distribution of party positions for selected questions
-        selected_question = st.selectbox(
-            "Velg spørsmål for detaljanalyse:",
-            df["Spm"].head(20).tolist(),
-            key="question_selector"
-        )
-        
-        question_row = df[df["Spm"] == selected_question].iloc[0]
-        party_positions = question_row[parties]
-        
-        fig = go.Figure()
-        
-        colors_parties = [color_map(pos) for pos in party_positions]
-        
-        fig.add_trace(go.Bar(
-            x=parties,
-            y=party_positions,
-            marker=dict(
-                color=colors_parties,
-                line=dict(color='black', width=1)
-            ),
-            text=[f"{pos:+.1f}" for pos in party_positions],
-            textposition='auto',
-            hovertemplate='<b>%{x}</b><br>Posisjon: %{y:+.1f}<br>' +
-                         'Tolkning: %{customdata}<extra></extra>',
-            customdata=[
-                "Sterkt imot" if pos < -1.5 else
-                "Imot" if pos < -0.5 else
-                "Nøytral/usikker" if abs(pos) < 0.5 else
-                "For" if pos < 1.5 else
-                "Sterkt for"
-                for pos in party_positions
-            ]
-        ))
-        
-        fig.add_hline(y=0, line_dash="solid", line_color="gray", opacity=0.5,
-                     annotation_text="Nøytral posisjon")
-        
-        fig.update_layout(
-            title=f"Partiposisjoner: {wrap(selected_question, width=60, lines=2)}",
-            xaxis_title="Partier",
-            yaxis_title="Posisjon ← Imot | For →",
-            xaxis=dict(tickangle=45),
-            yaxis=dict(range=[-2.2, 2.2]),
-            plot_bgcolor=BG, paper_bgcolor=BG,
-            margin=dict(l=60, r=20, t=100, b=80),
-        )
-        
-        top = df.nlargest(top_k, "std").copy().reset_index(drop=True)
-
-    if view_mode != "Partifordeling":
-        if show_labels and len(top) > 0:
-            y_col = "var" if view_mode == "Klassisk polarisering" else "polarization_score"
-            fig.add_trace(go.Scatter(
-                x=top["mu"], y=top[y_col],
-                mode="markers",
-                marker=dict(size=top["size"]*1.15, color="rgba(255,255,255,0.1)", line=dict(width=2.5, color="#333333")),
-                hoverinfo="skip",
-                showlegend=False
-            ))
-            fig.add_trace(go.Scatter(
-                x=top["mu"], y=top[y_col],
-                mode="text",
-                text=[str(i) for i in range(1, len(top)+1)],
-                textfont=dict(size=14, color="#222222", family="Arial"),
-                textposition="middle center",
-                showlegend=False,
-                hoverinfo="skip"
-            ))
-
-    with left:
         st.plotly_chart(fig, use_container_width=True)
-        if view_mode == "Klassisk polarisering":
-            st.caption(f"Median uenighet: σ²={median_var:.2f} (σ={median_std:.2f})")
-        elif view_mode == "Politisk karakterisering":
-            st.caption(f"Polariseringsscore kombinerer politisk retning og uenighetsgrad")
-
-    # --- Topp-liste (right panel)
-    with right:
-        if view_mode == "Partifordeling":
-            st.subheader("📊 Posisjonssummering")
+        
+        # Summary statistics in friendly language
+        st.info(f"""
+        📈 **Sammendrag for {dataset}:**
+        • Totalt {len(df)} spørsmål analysert
+        • Gjennomsnittlig uenighet: {df['disagreement'].mean():.2f}
+        • Mest kontroversielle spørsmål har uenighet > {df['disagreement'].quantile(0.8):.2f}
+        """)
+    
+    with col_right:
+        st.subheader(f"Topp {top_k} mest kontroversielle")
+        
+        most_controversial = df.nlargest(top_k, "disagreement")
+        
+        for i, row in enumerate(most_controversial.itertuples(), 1):
+            question_text = getattr(row, 'Smp', getattr(row, 'Spm', 'Ukjent spørsmål'))
             
-            positions = question_row[parties]
+            # Create styled card
+            card_class = "supporting" if row.avg_position > 0.2 else "opposing" if row.avg_position < -0.2 else "neutral"
             
-            st.metric("Gjennomsnitt", f"{positions.mean():+.2f}")
-            st.metric("Kontrovers-nivå", f"{positions.std():.2f}")
-            st.metric("Spredning", f"{positions.max() - positions.min():.2f}")
+            st.markdown(f"""
+            <div class="question-card {card_class}">
+                <div style="font-weight: bold; margin-bottom: 8px;">
+                     {i}. {textwrap.fill(question_text, width=60)}
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                    {row.friendly_summary}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Add explanation of what makes questions controversial
+        with st.expander("🤔 Hva gjør et spørsmål kontroversielt?"):
+            st.write("""
+            Et spørsmål blir kontroversielt når:
+            - **Noen partier er sterkt for** (svarer +2)
+            - **Andre partier er sterkt imot** (svarer -2)  
+            - **Få partier er nøytrale** (svarer 0)
             
-            # Count positions
-            strong_for = (positions > 1.5).sum()
-            for_count = ((positions > 0.5) & (positions <= 1.5)).sum()
-            neutral = (abs(positions) <= 0.5).sum()
-            against = ((positions < -0.5) & (positions >= -1.5)).sum()
-            strong_against = (positions < -1.5).sum()
-            
-            st.subheader("Partifordeling")
-            st.write(f"🔴 Sterkt imot: {strong_against}")
-            st.write(f"🟠 Imot: {against}")
-            st.write(f"🟡 Nøytral: {neutral}")
-            st.write(f"🟢 For: {for_count}")
-            st.write(f"🔵 Sterkt for: {strong_for}")
-            
-        else:
-            metric_name = "polariserende" if view_mode == "Klassisk polarisering" else "karakteristiske"
-            st.subheader(f"Topp {top_k} mest {metric_name}")
-            
-            # Enhanced list display with political insights
-            for i, row in enumerate(top.itertuples(index=False), 1):
-                if view_mode == "Klassisk polarisering":
-                    direction_emoji = "➡️" if abs(row.mu) < 0.2 else ("🔵" if row.mu > 0 else "🔴")
-                    controversy_emoji = "🔥" if row.var > 1.2 else ("⚡" if row.var > 0.8 else "📊")
-                    
-                    question_text = textwrap.fill(row.Spm, width=wrap_w-10)
-                    
-                    st.markdown(f"""
-                    <div style="
-                        background: linear-gradient(135deg, {'#ffe6e6' if row.mu < -0.2 else '#e6f3ff' if row.mu > 0.2 else '#f5f5f5'}, 
-                                                 {'#fff0f0' if row.mu < -0.2 else '#f0f8ff' if row.mu > 0.2 else '#fafafa'});
-                        border-left: 4px solid {COL_NEG if row.mu < -0.2 else COL_POS if row.mu > 0.2 else COL_NEU};
-                        padding: 12px;
-                        border-radius: 8px;
-                        margin: 8px 0;
-                    ">
-                        <div style="font-weight: bold; color: #111111; margin-bottom: 6px;">
-                            {direction_emoji}{controversy_emoji} {i}. {question_text}
-                        </div>
-                        <div style="color: #666; font-size: 12px;">
-                            μ={row.mu:+.2f} | σ²={row.var:.2f}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                else:  # Political characterization
-                    direction_emoji = "🔵" if "støttende" in row.political_lean else "🔴" if "kritisk" in row.political_lean else "🟡"
-                    consensus_emoji = "🤝" if row.consensus_level == "Bred enighet" else "⚡" if "uenighet" in row.consensus_level else "🔥"
-                    
-                    question_text = textwrap.fill(row.Spm, width=wrap_w-10)
-                    
-                    st.markdown(f"""
-                    <div style="
-                        background: linear-gradient(135deg, #f0f8ff, #fafafa);
-                        border-left: 4px solid {COL_POS if "støttende" in row.political_lean else COL_NEG if "kritisk" in row.political_lean else COL_NEU};
-                        padding: 12px;
-                        border-radius: 8px;
-                        margin: 8px 0;
-                    ">
-                        <div style="font-weight: bold; color: #111111; margin-bottom: 6px;">
-                            {direction_emoji}{consensus_emoji} {i}. {question_text}
-                        </div>
-                        <div style="color: #666; font-size: 12px;">
-                            {row.political_lean} | {row.consensus_level}
-                        </div>
-                        <div style="color: #888; font-size: 11px;">
-                            Polarisering: {row.polarization_score:.2f}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+            Dette skaper stor "uenighet" som vi måler statistisk.
+            """)
 
 with tab2:
-    st.header("Politiske Partiprofiler")
+    st.header("Sammenlign NRK og TV2")
     
     create_explanation_card(
-        "Hva viser denne analysen?", 
-        "Selv om NRK og TV2 har ulike spørsmål, kan vi analysere hvordan partiene posisjonerer seg. " +
-        "Dette avslører politiske mønstre, konsistens og strategier på tvers av mediekilder."
+        " Viktig begrensning", 
+        "NRK og TV2 har FORSKJELLIGE spørsmål! Vi kan ikke sammenligne tall direkte. " +
+        "I stedet ser vi på mønstre: hvilke partier rangeres høyt/lavt i hver kilde?",
+        "", "warning"
     )
     
-    # Calculate party profiles for both sources
-    nrk_profiles = calculate_party_profiles(nrk, parties)
-    tv2_profiles = calculate_party_profiles(tv2, parties)
+    # Analysis options
+    comparison_type = st.radio("Hva vil du sammenligne?", [
+        "Partienes relative posisjoner",
+        "Enighet vs. uenighet mellom kilder", 
+        "Rangering av partier"
+    ])
     
-    col1, col2 = st.columns([2, 1])
+    n_questions = st.slider("Antall spørsmål per kilde", 10, 50, 25)
     
-    with col1:
-        # Multi-dimensional party comparison
-        profile_metric = st.selectbox(
-            "Velg profildimensjon:",
-            ["avg_position", "consistency", "extreme_positions", "centrist_tendency"],
-            format_func=lambda x: {
-                "avg_position": "Gjennomsnittlig posisjon",
-                "consistency": "Konsistens i standpunkter", 
-                "extreme_positions": "Andel sterke standpunkter",
-                "centrist_tendency": "Sentrisk tendens"
-            }[x]
-        )
+    # Prepare data
+    nrk_subset = nrk.head(n_questions)
+    tv2_subset = tv2.head(n_questions)
+    
+    if comparison_type == "Partienes relative posisjoner":
+        create_how_to_read_box("party_comparison")
         
-        fig_profiles = go.Figure()
+        col1, col2 = st.columns(2)
         
-        # NRK data
-        fig_profiles.add_trace(go.Scatter(
-            x=parties,
-            y=nrk_profiles[profile_metric],
-            mode='markers+lines',
-            name='NRK',
-            line=dict(color=COL_NEG, width=3),
+        with col1:
+            st.subheader("NRK - Gjennomsnittlige posisjoner")
+            nrk_avg = nrk_subset[parties].mean().sort_values()
+            
+            fig_nrk = px.bar(
+                x=nrk_avg.values,
+                y=nrk_avg.index,
+                orientation='h',
+                color=nrk_avg.values,
+                color_continuous_scale=[[0, COL_NEG], [0.5, COL_NEU], [1, COL_POS]],
+                title="Partier sortert etter gjennomsnittlig posisjon"
+            )
+            fig_nrk.update_layout(
+                xaxis_title="Gjennomsnitt ← Kritisk | Støttende →",
+                plot_bgcolor=BG, paper_bgcolor=BG,
+                showlegend=False
+            )
+            st.plotly_chart(fig_nrk, use_container_width=True)
+        
+        with col2:
+            st.subheader("TV2 - Gjennomsnittlige posisjoner")
+            tv2_avg = tv2_subset[parties].mean().sort_values()
+            
+            fig_tv2 = px.bar(
+                x=tv2_avg.values,
+                y=tv2_avg.index,
+                orientation='h',
+                color=tv2_avg.values,
+                color_continuous_scale=[[0, COL_NEG], [0.5, COL_NEU], [1, COL_POS]],
+                title="Partier sortert etter gjennomsnittlig posisjon"
+            )
+            fig_tv2.update_layout(
+                xaxis_title="Gjennomsnitt ← Kritisk | Støttende →",
+                plot_bgcolor=BG, paper_bgcolor=BG,
+                showlegend=False
+            )
+            st.plotly_chart(fig_tv2, use_container_width=True)
+        
+        # Ranking comparison
+        st.subheader("📊 Rangering-sammenligning")
+        nrk_ranks = nrk_avg.rank(method='min')
+        tv2_ranks = tv2_avg.rank(method='min')
+        
+        rank_comparison = pd.DataFrame({
+            "Parti": parties,
+            "NRK_rangering": [nrk_ranks[p] for p in parties],
+            "TV2_rangering": [tv2_ranks[p] for p in parties],
+        })
+        rank_comparison["Forskjell"] = rank_comparison["TV2_rangering"] - rank_comparison["NRK_rangering"]
+        rank_comparison = rank_comparison.sort_values("Forskjell", key=abs, ascending=False)
+        
+        st.dataframe(rank_comparison, use_container_width=True)
+        
+        # Interpretation
+        max_diff = rank_comparison["Forskjell"].abs().max()
+        if max_diff <= 2:
+            st.success("🟢 Kildene rangerer partiene ganske likt!")
+        elif max_diff <= 4:
+            st.warning("🟡 Noen forskjeller i rangering mellom kildene")
+        else:
+            st.error("🔴 Store forskjeller - kildene rangerer partiene ulikt")
+    
+    elif comparison_type == "Enighet vs. uenighet mellom kilder":
+        st.subheader("🤝 Hvor enige er kildene?")
+        
+        # Calculate agreement statistics
+        nrk_polarization = prep_data_with_friendly_labels(nrk_subset, parties)
+        tv2_polarization = prep_data_with_friendly_labels(tv2_subset, parties)
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric(
+                "NRK: Spørsmål med bred enighet",
+                f"{(nrk_polarization['disagreement'] < 0.5).sum()}/{len(nrk_polarization)}"
+            )
+            st.metric(
+                "NRK: Kontroversielle spørsmål", 
+                f"{(nrk_polarization['disagreement'] > 1.2).sum()}/{len(nrk_polarization)}"
+            )
+        
+        with col2:
+            st.metric(
+                "TV2: Spørsmål med bred enighet",
+                f"{(tv2_polarization['disagreement'] < 0.5).sum()}/{len(tv2_polarization)}"
+            )
+            st.metric(
+                "TV2: Kontroversielle spørsmål",
+                f"{(tv2_polarization['disagreement'] > 1.2).sum()}/{len(tv2_polarization)}"
+            )
+        
+        with col3:
+            nrk_avg_disagreement = nrk_polarization['disagreement'].mean()
+            tv2_avg_disagreement = tv2_polarization['disagreement'].mean()
+            
+            st.metric("NRK: Gj.snitt uenighet", f"{nrk_avg_disagreement:.2f}")
+            st.metric("TV2: Gj.snitt uenighet", f"{tv2_avg_disagreement:.2f}")
+            
+            if abs(nrk_avg_disagreement - tv2_avg_disagreement) < 0.1:
+                st.success("Likt konflikt-nivå")
+            else:
+                diff_source = "NRK" if nrk_avg_disagreement > tv2_avg_disagreement else "TV2"
+                st.info(f"{diff_source} har mer kontrovers")
+    
+    else:  # Ranking comparison
+        st.subheader("🏆 Hvem rangeres høyest/lavest?")
+        
+        nrk_sums = nrk_subset[parties].sum().sort_values(ascending=False)
+        tv2_sums = tv2_subset[parties].sum().sort_values(ascending=False)
+        
+        # Create ranking visualization
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatter(
+            x=list(range(1, len(parties)+1)),
+            y=[nrk_sums.index.get_loc(p) + 1 for p in nrk_sums.index],
+            mode='markers+lines+text',
+            name='NRK rangering',
+            text=nrk_sums.index,
+            textposition="middle right",
             marker=dict(size=12, color=COL_NEG)
         ))
         
-        # TV2 data
-        fig_profiles.add_trace(go.Scatter(
-            x=parties,
-            y=tv2_profiles[profile_metric],
-            mode='markers+lines',
-            name='TV2',
-            line=dict(color=COL_POS, width=3),
+        fig.add_trace(go.Scatter(
+            x=list(range(1, len(parties)+1)),
+            y=[tv2_sums.index.get_loc(p) + 1 for p in tv2_sums.index],
+            mode='markers+lines+text', 
+            name='TV2 rangering',
+            text=tv2_sums.index,
+            textposition="middle left",
             marker=dict(size=12, color=COL_POS)
         ))
         
-        # Calculate correlation between sources for this metric
-        correlation = np.corrcoef(nrk_profiles[profile_metric], tv2_profiles[profile_metric])[0, 1]
-        
-        fig_profiles.update_layout(
-            title=f"Partiprofile: {profile_metric.replace('_', ' ').title()} (r={correlation:.3f})",
-            xaxis_title="Partier",
-            yaxis_title="Score",
-            xaxis=dict(tickangle=45),
-            plot_bgcolor=BG,
-            paper_bgcolor=BG,
-            font=dict(color="#111111")
+        fig.update_layout(
+            title="Partirangering: NRK vs TV2",
+            xaxis_title="Rangering (1 = høyest)",
+            yaxis_title="",
+            yaxis=dict(autorange="reversed"),
+            plot_bgcolor=BG, paper_bgcolor=BG
         )
         
-        st.plotly_chart(fig_profiles, use_container_width=True)
-    
-    with col2:
-        st.subheader("📊 Profil-innsikter")
-        
-        # Cross-source consistency analysis
-        consistency_scores = []
-        for party in parties:
-            nrk_score = nrk_profiles.loc[party, profile_metric]
-            tv2_score = tv2_profiles.loc[party, profile_metric]
-            consistency_scores.append(abs(nrk_score - tv2_score))
-        
-        most_consistent = parties[np.argmin(consistency_scores)]
-        least_consistent = parties[np.argmax(consistency_scores)]
-        
-        st.metric("Korrelasjon mellom kilder", f"{correlation:.3f}")
-        st.metric("Mest konsistente parti", most_consistent)
-        st.metric("Minst konsistente parti", least_consistent)
-        
-        # Interpretation
-        if correlation > 0.7:
-            st.success("🟢 Høy konsistens - Partiene viser samme mønster på tvers av kilder")
-        elif correlation > 0.4:
-            st.warning("🟡 Moderat konsistens - Noen forskjeller mellom kilder")
-        else:
-            st.error("🔴 Lav konsistens - Betydelige forskjeller i partiprofiler")
-        
-        # Profile interpretation
-        st.subheader("💡 Tolkning")
-        if profile_metric == "avg_position":
-            st.info("Positive verdier = mer støttende til forslag generelt")
-        elif profile_metric == "consistency":
-            st.info("Høyere verdier = mer forutsigbare standpunkter")
-        elif profile_metric == "extreme_positions":
-            st.info("Høyere verdier = tar oftere sterke standpunkter")
-        else:
-            st.info("Høyere verdier = mer moderate/sentriske standpunkter")
-    
-    # Detailed party analysis table
-    st.subheader("📋 Detaljert Partianalyse")
-    
-    comparison_df = pd.DataFrame({
-        'Parti': parties,
-        'NRK_pos': nrk_profiles['avg_position'].round(3),
-        'TV2_pos': tv2_profiles['avg_position'].round(3),
-        'NRK_konsist': nrk_profiles['consistency'].round(3),
-        'TV2_konsist': tv2_profiles['consistency'].round(3),
-        'Forskjell_pos': (tv2_profiles['avg_position'] - nrk_profiles['avg_position']).round(3),
-        'Forskjell_konsist': (tv2_profiles['consistency'] - nrk_profiles['consistency']).round(3)
-    })
-    
-    st.dataframe(comparison_df, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
 with tab3:
-    # Center the header
-    st.markdown("<h1 style='text-align: center; color: #111111;'>Kategori-oversikt (TV 2)</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #666666;'>Fordeling av spørsmål på temaer i TV 2-datasettet.</p>", unsafe_allow_html=True)
+    st.header("Temaoversikt fra TV2")
     
-    s = tv2["Kategori"].dropna().value_counts()
-    total = s.sum()
-    pct = (s / total * 100).sort_values(ascending=False)  # Largest first for better visual hierarchy
-    
-    # Create color palette - more colors for better distinction
-    extended_colors = [COL_NEG, COL_POS, COL_NEU, "#8B9DC3", "#DEB887", "#F4A460", "#98FB98", "#FFB6C1", "#87CEEB", "#DDA0DD"]
-    category_colors = [extended_colors[i % len(extended_colors)] for i in range(len(pct))]
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        # Create modern donut chart with Plotly
-        fig_donut = go.Figure(data=[go.Pie(
-            labels=pct.index, 
-            values=pct.values,
-            hole=0.4,  # Creates donut effect
-            marker=dict(
-                colors=category_colors,
-                line=dict(color='white', width=2)
-            ),
-            textinfo='label+percent',
-            textposition='outside',
-            textfont=dict(size=11, color='#111111'),
-            texttemplate='%{label}<br>%{percent}',
-            hovertemplate='<b>%{label}</b><br>' +
-                         'Antall: %{value:.0f}<br>' +
-                         'Prosent: %{percent}<br>' +
-                         '<extra></extra>'
-        )])
-        
-        # Add center text
-        fig_donut.add_annotation(
-            text=f"<b>{total}</b><br>Totalt<br>spørsmål",
-            x=0.5, y=0.5,
-            font=dict(size=16, color='#111111'),
-            showarrow=False
+    if 'Kategori' not in tv2.columns:
+        st.error("TV2-data mangler kategori-informasjon")
+    else:
+        create_explanation_card(
+            "Fordeling av politiske tema",
+            "TV2 organiserer spørsmålene sine i tema som økonomi, familie, helse osv. " +
+            "Her ser vi hvilke tema som får mest oppmerksomhet."
         )
         
-        fig_donut.update_layout(
-            title=dict(
-                text="<b>Kategori-fordeling</b>",
-                font=dict(size=18, color='#111111'),
-                x=0.5
-            ),
-            plot_bgcolor=BG,
-            paper_bgcolor=BG,
-            font=dict(color='#111111'),
-            showlegend=False,  # Remove legend since labels are on the chart
-            margin=dict(t=80, b=80, l=80, r=80),  # Increased margins to prevent label cutoff
-            height=600  # Increased height to accommodate labels
-        )
-        
-        st.plotly_chart(fig_donut, use_container_width=True)
-    
-    with col2:
-        st.subheader("📊 Kategori-detaljer")
-        
-        # Create elegant category cards
-        for i, (kategori, prosent) in enumerate(pct.items()):
-            antall = s[kategori]
-            color = category_colors[i]
-            
-            # Create a styled card for each category
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, {color}22, {color}11);
-                border-left: 4px solid {color};
-                padding: 12px 16px;
-                margin: 8px 0;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            ">
-                <div style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                ">
-                    <div>
-                        <div style="font-weight: bold; color: #111111; font-size: 14px;">
-                            {kategori}
-                        </div>
-                        <div style="color: #666; font-size: 12px;">
-                            {antall} spørsmål
-                        </div>
-                    </div>
-                    <div style="
-                        background: {color};
-                        color: white;
-                        padding: 4px 12px;
-                        border-radius: 20px;
-                        font-weight: bold;
-                        font-size: 13px;
-                    ">
-                        {prosent:.1f}%
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Add summary statistics
-        st.markdown("---")
-        st.subheader("📈 Sammendrag")
-        
-        largest_category = pct.index[0]
-        largest_pct = pct.iloc[0]
-        smallest_category = pct.index[-1]
-        smallest_pct = pct.iloc[-1]
-        
-        st.metric("Største kategori", largest_category, f"{largest_pct:.1f}%")
-        st.metric("Minste kategori", smallest_category, f"{smallest_pct:.1f}%")
-        st.metric("Antall kategorier", len(pct))
-        
-        # Diversity index (how evenly distributed the categories are)
-        # Higher values = more evenly distributed
-        expected_pct = 100 / len(pct)
-        diversity_score = 100 - np.std(pct.values)
-        st.metric("Diversitetsindeks", f"{diversity_score:.0f}/100")
-        
-        if diversity_score > 80:
-            st.success("🟢 Godt balansert fordeling")
-        elif diversity_score > 60:
-            st.warning("🟡 Moderat balanse")
-        else:
-            st.error("🔴 Ubalansert fordeling")
-    
-    # Enhanced category analysis
-    if 'Kategori' in tv2.columns:
-        st.subheader("🎯 Tematisk polariseringsanalyse")
-        
-        tv2_with_themes = prep_with_insights(tv2, parties)
-        
-        # Theme analysis
-        theme_analysis = tv2_with_themes.groupby('Kategori').agg({
-            'polarization_score': ['mean', 'max', 'count'],
-            'mu': 'mean',
-            'std': 'mean'
-        }).round(3)
-        
-        theme_analysis.columns = ['Gj_polarisering', 'Maks_polarisering', 'Antall_sporsmal', 
-                                'Gj_retning', 'Gj_uenighet']
-        theme_analysis = theme_analysis.reset_index()
-        
-        # Create theme polarization chart
-        fig_theme_polar = px.bar(
-            theme_analysis.sort_values('Gj_polarisering', ascending=False),
-            x='Kategori', y='Gj_polarisering',
-            color='Gj_polarisering',
-            color_continuous_scale='Viridis',
-            title="Gjennomsnittlig polarisering per tema"
-        )
-        
-        fig_theme_polar.update_layout(
-            xaxis_title="Tema",
-            yaxis_title="Gjennomsnittlig polarisering",
-            xaxis_tickangle=45,
-            plot_bgcolor=BG, paper_bgcolor=BG,
-            font=dict(color="#111111")
-        )
-        
-        st.plotly_chart(fig_theme_polar, use_container_width=True)
-    
-    # Optional: Show raw data in an expandable section
-    with st.expander("🔍 Se rådata"):
-        cat_df = pd.DataFrame({
-            "Kategori": pct.index, 
-            "Antall": s[pct.index].values, 
-            "Prosent": pct.values.round(1),
-            "Kumulativ %": pct.values.cumsum().round(1)
-        })
-        st.dataframe(cat_df, use_container_width=True)
-
-with tab4:
-    st.header("Sammenligning: NRK vs TV 2")
-    st.write("Partisummer basert på de første N spørsmålene fra hver kilde.")
-    
-    NQ = st.slider("Antall spørsmål å inkludere", 10, 50, 30, 5, key="nq_slider")
-    
-    nrk_sum = nrk.head(NQ)[parties].sum()
-    tv2_sum = tv2.head(NQ)[parties].sum()
-    
-    comp_df = pd.DataFrame({"NRK": nrk_sum, "TV 2": tv2_sum})
-    comp_df["avg"] = comp_df[["NRK","TV 2"]].mean(axis=1)
-    comp_df = comp_df.sort_values("avg", ascending=False).drop(columns="avg")
-    
-    # Calculate differences for analysis
-    comp_df["Difference"] = comp_df["TV 2"] - comp_df["NRK"]
-    comp_df["Abs_Difference"] = abs(comp_df["Difference"])
-    
-    # Enhanced analysis view options
-    analysis_view = st.radio("Analysevisning:", 
-                           ["Sammenligning", "Konsistensanalyse", "Politisk spekter"])
-    
-    if analysis_view == "Sammenligning":
-        col1, col2 = st.columns([2.5, 1.5])
-        
-        with col1:
-            # Create modern grouped bar chart with Plotly
-            fig_comp = go.Figure()
-            
-            # Add NRK bars
-            fig_comp.add_trace(go.Bar(
-                name='NRK',
-                x=comp_df.index,
-                y=comp_df["NRK"],
-                marker=dict(
-                    color=COL_NEG,
-                    line=dict(color='white', width=1)
-                ),
-                text=[f"{val:.0f}" for val in comp_df["NRK"]],
-                textposition='auto',
-                textfont=dict(color='white', size=11),
-                hovertemplate='<b>%{x}</b><br>NRK: %{y:.1f}<extra></extra>'
-            ))
-            
-            # Add TV2 bars
-            fig_comp.add_trace(go.Bar(
-                name='TV 2',
-                x=comp_df.index,
-                y=comp_df["TV 2"],
-                marker=dict(
-                    color=COL_POS,
-                    line=dict(color='white', width=1)
-                ),
-                text=[f"{val:.0f}" for val in comp_df["TV 2"]],
-                textposition='auto',
-                textfont=dict(color='white', size=11),
-                hovertemplate='<b>%{x}</b><br>TV 2: %{y:.1f}<extra></extra>'
-            ))
-            
-            fig_comp.update_layout(
-                title=f"Partipoengsum: NRK vs TV 2 (basert på {NQ} spørsmål per kilde)",
-                xaxis=dict(
-                    title="Partier",
-                    tickangle=45,
-                    tickfont=dict(color='#111111'),
-                    title_font=dict(color='#111111')
-                ),
-                yaxis=dict(
-                    title="Sum score",
-                    tickfont=dict(color='#111111'),
-                    title_font=dict(color='#111111'),
-                    gridcolor='rgba(128,128,128,0.2)'
-                ),
-                plot_bgcolor=BG,
-                paper_bgcolor=BG,
-                font=dict(color='#111111'),
-                legend=dict(
-                    orientation="h",
-                    yanchor="top",
-                    y=-0.12,
-                    xanchor="center",
-                    x=0.5,
-                    bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='#111111', size=12)
-                ),
-                barmode='group',
-                bargap=0.15,
-                bargroupgap=0.1,
-                height=450,
-                margin=dict(t=60, b=100, l=60, r=40),
-                showlegend=True
-            )
-            
-            st.plotly_chart(fig_comp, use_container_width=True)
-        
-        with col2:
-            st.subheader("📊 Sammenligning-analyse")
-            
-            # Key metrics
-            total_nrk = comp_df["NRK"].sum()
-            total_tv2 = comp_df["TV 2"].sum()
-            avg_diff = comp_df["Abs_Difference"].mean()
-            max_diff_party = comp_df.loc[comp_df["Abs_Difference"].idxmax()]
-            
-            st.metric("NRK Total", f"{total_nrk:.0f}", delta=f"{total_nrk-total_tv2:+.0f} vs TV2")
-            st.metric("TV2 Total", f"{total_tv2:.0f}")
-            st.metric("Gj.snitt forskjell", f"{avg_diff:.1f} poeng")
-            
-            # Biggest difference
-            st.markdown("---")
-            st.subheader("🎯 Største forskjell")
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, {COL_NEU}22, {COL_NEU}11);
-                border-left: 4px solid {COL_NEU};
-                padding: 12px;
-                border-radius: 8px;
-                margin: 8px 0;
-            ">
-                <div style="font-weight: bold; color: #111111;">
-                    {max_diff_party.name}
-                </div>
-                <div style="color: #666; font-size: 12px;">
-                    NRK: {max_diff_party['NRK']:.1f} | TV2: {max_diff_party['TV 2']:.1f}
-                </div>
-                <div style="color: #666; font-size: 12px;">
-                    Forskjell: {max_diff_party['Difference']:+.1f} poeng
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Correlation analysis
-            correlation = comp_df["NRK"].corr(comp_df["TV 2"])
-            st.metric("Korrelasjonskoeffisient", f"{correlation:.3f}")
-            
-            if correlation > 0.8:
-                st.success("🟢 Høy enighet mellom kildene")
-            elif correlation > 0.6:
-                st.warning("🟡 Moderat enighet")
-            else:
-                st.error("🔴 Lav enighet mellom kildene")
-    
-    elif analysis_view == "Konsistensanalyse":
-        # Scatter plot showing consistency between sources
-        fig_scatter = go.Figure()
-        
-        fig_scatter.add_trace(go.Scatter(
-            x=comp_df["NRK"],
-            y=comp_df["TV 2"],
-            mode='markers+text',
-            text=comp_df.index,
-            textposition="top center",
-            marker=dict(
-                size=comp_df["Abs_Difference"] * 3 + 8,
-                color=comp_df["Abs_Difference"],
-                colorscale='Viridis',
-                colorbar=dict(title="Forskjell mellom kilder")
-            ),
-            hovertemplate='<b>%{text}</b><br>NRK: %{x:.1f}<br>TV2: %{y:.1f}<br>Forskjell: %{customdata:.1f}<extra></extra>',
-            customdata=comp_df["Abs_Difference"]
-        ))
-        
-        # Add diagonal line for perfect consistency
-        min_val = min(comp_df["NRK"].min(), comp_df["TV 2"].min())
-        max_val = max(comp_df["NRK"].max(), comp_df["TV 2"].max())
-        fig_scatter.add_trace(go.Scatter(
-            x=[min_val, max_val],
-            y=[min_val, max_val],
-            mode='lines',
-            line=dict(dash='dash', color='gray'),
-            name="Perfekt konsistens",
-            hoverinfo='skip'
-        ))
-        
-        correlation = comp_df["NRK"].corr(comp_df["TV 2"])
-        fig_scatter.update_layout(
-            title=f"Konsistens mellom kilder (r={correlation:.3f})",
-            xaxis_title="NRK sum score",
-            yaxis_title="TV2 sum score",
-            plot_bgcolor=BG, paper_bgcolor=BG,
-            font=dict(color="#111111")
-        )
-        
-        st.plotly_chart(fig_scatter, use_container_width=True)
-        
-        # Consistency interpretation
-        if correlation > 0.8:
-            st.success("🟢 Høy konsistens: Partiene rangeres likt av begge kilder")
-        elif correlation > 0.6:
-            st.warning("🟡 Moderat konsistens: Noen forskjeller i partirangering")
-        else:
-            st.error("🔴 Lav konsistens: Betydelige forskjeller mellom kildene")
-    
-    else:  # Politisk spekter
-        # Show average positions across both sources
-        nrk_avg = nrk.head(NQ)[parties].mean().sort_values()
-        tv2_avg = tv2.head(NQ)[parties].mean().sort_values()
-        
-        spectrum_df = pd.DataFrame({
-            "NRK": nrk_avg,
-            "TV2": tv2_avg
-        })
-        
-        fig_spectrum = go.Figure()
-        
-        fig_spectrum.add_trace(go.Scatter(
-            x=spectrum_df["NRK"],
-            y=list(range(len(spectrum_df))),
-            mode='markers+text',
-            text=spectrum_df.index,
-            textposition="middle right",
-            marker=dict(size=12, color=COL_NEG),
-            name="NRK"
-        ))
-        
-        fig_spectrum.add_trace(go.Scatter(
-            x=spectrum_df["TV2"],
-            y=list(range(len(spectrum_df))),
-            mode='markers+text',
-            text=spectrum_df.index,
-            textposition="middle left",
-            marker=dict(size=12, color=COL_POS),
-            name="TV2"
-        ))
-        
-        fig_spectrum.add_vline(x=0, line_dash="dash", line_color="gray")
-        
-        fig_spectrum.update_layout(
-            title="Politisk spekter: gjennomsnittlige partiposisjoner",
-            xaxis_title="Politisk posisjon ← Kritisk | Støttende →",
-            yaxis=dict(showticklabels=False, title=""),
-            plot_bgcolor=BG, paper_bgcolor=BG,
-            height=400,
-            margin=dict(l=40, r=40, t=60, b=60)
-        )
-        
-        st.plotly_chart(fig_spectrum, use_container_width=True)
-    
-    # Agreement analysis (common to all views)
-    st.subheader("🤝 Enighetsanalyse")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        high_agreement = (comp_df["Abs_Difference"] < 5).sum()
-        st.metric("Høy enighet", f"{high_agreement}/{len(comp_df)} partier")
-    
-    with col2:
-        medium_agreement = ((comp_df["Abs_Difference"] >= 5) & (comp_df["Abs_Difference"] < 15)).sum()
-        st.metric("Moderat enighet", f"{medium_agreement}/{len(comp_df)} partier")
-    
-    with col3:
-        low_agreement = (comp_df["Abs_Difference"] >= 15).sum()
-        st.metric("Lav enighet", f"{low_agreement}/{len(comp_df)} partier")
-
-with tab5:
-    st.header("Vektingseffekt")
-    st.write("Sammenligner partisummer før og etter vekting av en spesifikk kategori.")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        NQ_weight = st.slider("Antall spørsmål", 10, 50, 30, 5, key="nq_weight")
-    with col2:
-        categories = tv2["Kategori"].dropna().unique()
-        boost_category = st.selectbox("Kategori å vekte", categories, 
-                                     index=list(categories).index("Barn og familie") if "Barn og familie" in categories else 0)
-    with col3:
-        weight = st.slider("Vektfaktor", 1.0, 5.0, 2.0, 0.5)
-    
-    sel = tv2.head(NQ_weight).copy()
-    base = sel[parties].sum()
-    weights = sel["Kategori"].apply(lambda k: weight if k == boost_category else 1.0)
-    weighted = (sel[parties].multiply(weights.values, axis=0)).sum()
-    
-    weight_df = pd.DataFrame({"Før": base, "Etter": weighted})
-    weight_df = weight_df.sort_values("Før", ascending=False)
-    
-    # Calculate percentage changes for visual emphasis
-    weight_df["Endring"] = weight_df["Etter"] - weight_df["Før"]
-    weight_df["Endring (%)"] = (weight_df["Endring"] / weight_df["Før"] * 100).round(1)
-    
-    col_left, col_right = st.columns([2.5, 1.5])
-    
-    with col_left:
-        # Create modern grouped bar chart with Plotly
-        fig_weight = go.Figure()
-        
-        # Add "Før" bars
-        fig_weight.add_trace(go.Bar(
-            name='Før vekting',
-            x=weight_df.index,
-            y=weight_df["Før"],
-            marker=dict(
-                color=COL_NEG,
-                line=dict(color='white', width=1)
-            ),
-            text=[f"{val:.0f}" for val in weight_df["Før"]],
-            textposition='auto',
-            textfont=dict(color='white', size=10),
-            hovertemplate='<b>%{x}</b><br>Før: %{y:.1f}<extra></extra>'
-        ))
-        
-        # Add "Etter" bars
-        fig_weight.add_trace(go.Bar(
-            name='Etter vekting',
-            x=weight_df.index,
-            y=weight_df["Etter"],
-            marker=dict(
-                color=COL_POS,
-                line=dict(color='white', width=1)
-            ),
-            text=[f"{val:.0f}" for val in weight_df["Etter"]],
-            textposition='auto',
-            textfont=dict(color='white', size=10),
-            hovertemplate='<b>%{x}</b><br>Etter: %{y:.1f}<extra></extra>'
-        ))
-        
-        # Add change indicators (subtle arrows/markers)
-        for i, (party, row) in enumerate(weight_df.iterrows()):
-            if abs(row["Endring"]) > 1:  # Only show arrows for significant changes
-                arrow_color = COL_POS if row["Endring"] > 0 else COL_NEG
-                fig_weight.add_annotation(
-                    x=party,
-                    y=max(row["Før"], row["Etter"]) + 5,
-                    text="↗" if row["Endring"] > 0 else "↘",
-                    font=dict(size=16, color=arrow_color),
-                    showarrow=False
-                )
-        
-        fig_weight.update_layout(
-            title=dict(
-                text=f"<b>Vektingseffekt: «{boost_category}» vektes {weight}×</b>",
-                font=dict(size=16, color='#111111'),
-                x=0.2
-            ),
-            xaxis=dict(
-                title="Partier",
-                tickangle=45,
-                tickfont=dict(color='#111111'),
-                title_font=dict(color='#111111')
-            ),
-            yaxis=dict(
-                title="Sum score",
-                tickfont=dict(color='#111111'),
-                title_font=dict(color='#111111'),
-                gridcolor='rgba(128,128,128,0.2)'
-            ),
-            plot_bgcolor=BG,
-            paper_bgcolor=BG,
-            font=dict(color='#111111'),
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="center",
-                x=0.5,
-                bgcolor='rgba(0,0,0,0)',
-                font=dict(color='#111111', size=12)
-            ),
-            barmode='group',
-            bargap=0.15,
-            bargroupgap=0.1,
-            height=450,
-            margin=dict(t=80, b=100, l=60, r=40)
-        )
-        
-        st.plotly_chart(fig_weight, use_container_width=True)
-    
-    with col_right:
-        st.subheader("📊 Vektingsanalyse")
-        
-        # Key metrics
-        max_increase = weight_df["Endring"].max()
-        max_decrease = weight_df["Endring"].min()
-        avg_change = weight_df["Endring"].mean()
-        
-        # Party with biggest increase/decrease
-        biggest_winner = weight_df.loc[weight_df["Endring"].idxmax()]
-        biggest_loser = weight_df.loc[weight_df["Endring"].idxmin()] if weight_df["Endring"].min() < 0 else None
-        
-        st.metric("Største økning", f"+{max_increase:.1f} poeng", 
-                 delta=f"{biggest_winner.name}")
-        
-        if biggest_loser is not None:
-            st.metric("Største nedgang", f"{max_decrease:.1f} poeng", 
-                     delta=f"{biggest_loser.name}")
-        
-        st.metric("Gj.snitt endring", f"{avg_change:+.1f} poeng")
-        
-        # Impact assessment
-        st.markdown("---")
-        st.subheader("🎯 Påvirkning")
-        
-        # Count parties with significant changes
-        significant_changes = (abs(weight_df["Endring"]) > 2).sum()
-        moderate_changes = ((abs(weight_df["Endring"]) >= 1) & (abs(weight_df["Endring"]) <= 2)).sum()
-        
-        st.metric("Betydelig påvirket", f"{significant_changes} partier")
-        st.metric("Moderat påvirket", f"{moderate_changes} partier")
-        
-        # Visual impact indicator
-        if max_increase > 10:
-            st.success(f"🟢 Høy påvirkning fra {weight}× vekting")
-        elif max_increase > 5:
-            st.warning(f"🟡 Moderat påvirkning fra {weight}× vekting")
-        else:
-            st.info(f"🔵 Lav påvirkning fra {weight}× vekting")
-        
-        # Category weight info
-        st.markdown("---")
-        st.subheader("⚖️ Vektinfo")
-        
-        # Count questions in selected category
-        category_questions = sel[sel["Kategori"] == boost_category].shape[0]
-        total_questions = sel.shape[0]
-        category_pct = (category_questions / total_questions) * 100
-        
-        st.metric("Spørsmål i kategori", f"{category_questions}/{total_questions}")
-        st.metric("Kategori-andel", f"{category_pct:.1f}%")
-        st.metric("Effektiv vekt", f"{category_pct * weight:.1f}%")
-    
-    # Detailed changes table
-    with st.expander("📋 Se detaljerte endringer"):
-        display_change_df = weight_df[["Før", "Etter", "Endring", "Endring (%)"]].copy()
-        display_change_df["Trend"] = display_change_df["Endring"].apply(
-            lambda x: "📈 Økning" if x > 0 else 
-                      "📉 Nedgang" if x < 0 else 
-                      "➡️ Uendret"
-        )
-        
-        # Style the dataframe
-        st.dataframe(
-            display_change_df.rename(columns={
-                "Før": "Før vekting",
-                "Etter": "Etter vekting",
-                "Endring": "Endring (poeng)",
-                "Endring (%)": "Endring (%)",
-                "Trend": "Retning"
-            }),
-            use_container_width=True
-        )
-
-with tab6:
-    st.header("Scenario-analyse")
-    st.write("Sammenligner partisummer med og uten en spesifikk kategori.")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        NQ_scenario = st.slider("Antall spørsmål", 5, 30, 10, 1, key="nq_scenario")
-    with col2:
-        categories_scenario = tv2["Kategori"].dropna().unique()
-        category_to_drop = st.selectbox("Kategori å fjerne", categories_scenario,
-                                       index=list(categories_scenario).index("Barn og familie") if "Barn og familie" in categories_scenario else 0)
-    
-    base_scenario = tv2.head(NQ_scenario)[parties].sum()
-    after_scenario = tv2[tv2["Kategori"] != category_to_drop].head(NQ_scenario)[parties].sum()
-    
-    scenario_df = pd.DataFrame({"Med alle kategorier": base_scenario, f"Uten {category_to_drop}": after_scenario})
-    scenario_df = scenario_df.sort_values("Med alle kategorier", ascending=False)
-    
-    # Calculate impact metrics
-    scenario_df["Endring"] = scenario_df[f"Uten {category_to_drop}"] - scenario_df["Med alle kategorier"]
-    scenario_df["Endring (%)"] = (scenario_df["Endring"] / scenario_df["Med alle kategorier"] * 100).round(1)
-    
-    # Count questions in the category to be removed
-    category_questions = tv2.head(NQ_scenario)[tv2["Kategori"] == category_to_drop].shape[0]
-    total_questions = tv2.head(NQ_scenario).shape[0]
-    
-    col_left, col_right = st.columns([2.5, 1.5])
-    
-    with col_left:
-        # Create modern grouped bar chart with Plotly
-        fig_scenario = go.Figure()
-        
-        # Add "Med alle" bars
-        fig_scenario.add_trace(go.Bar(
-            name='Med alle kategorier',
-            x=scenario_df.index,
-            y=scenario_df["Med alle kategorier"],
-            marker=dict(
-                color=COL_NEU,
-                line=dict(color='white', width=1)
-            ),
-            text=[f"{val:.0f}" for val in scenario_df["Med alle kategorier"]],
-            textposition='auto',
-            textfont=dict(color='#111111', size=10),
-            hovertemplate='<b>%{x}</b><br>Med alle: %{y:.1f}<extra></extra>'
-        ))
-        
-        # Add "Uten kategori" bars
-        fig_scenario.add_trace(go.Bar(
-            name=f'Uten «{category_to_drop}»',
-            x=scenario_df.index,
-            y=scenario_df[f"Uten {category_to_drop}"],
-            marker=dict(
-                color=COL_NEG,
-                line=dict(color='white', width=1)
-            ),
-            text=[f"{val:.0f}" for val in scenario_df[f"Uten {category_to_drop}"]],
-            textposition='auto',
-            textfont=dict(color='white', size=10),
-            hovertemplate=f'<b>%{{x}}</b><br>Uten {category_to_drop}: %{{y:.1f}}<extra></extra>'
-        ))
-        
-        # Add impact indicators (arrows for significant changes)
-        for i, (party, row) in enumerate(scenario_df.iterrows()):
-            if abs(row["Endring"]) > 1:  # Only show arrows for significant changes
-                arrow_color = COL_POS if row["Endring"] > 0 else COL_NEG
-                fig_scenario.add_annotation(
-                    x=party,
-                    y=max(row["Med alle kategorier"], row[f"Uten {category_to_drop}"]) + 3,
-                    text="↗" if row["Endring"] > 0 else "↘",
-                    font=dict(size=16, color=arrow_color),
-                    showarrow=False
-                )
-        
-        fig_scenario.update_layout(
-            title=dict(
-                text=f"<b>Scenario: Fjerner kategori «{category_to_drop}»</b>",
-                font=dict(size=16, color='#111111'),
-                x=0.2
-            ),
-            xaxis=dict(
-                title="Partier",
-                tickangle=45,
-                tickfont=dict(color='#111111'),
-                title_font=dict(color='#111111')
-            ),
-            yaxis=dict(
-                title="Sum score",
-                tickfont=dict(color='#111111'),
-                title_font=dict(color='#111111'),
-                gridcolor='rgba(128,128,128,0.2)'
-            ),
-            plot_bgcolor=BG,
-            paper_bgcolor=BG,
-            font=dict(color='#111111'),
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="center",
-                x=0.5,
-                bgcolor='rgba(0,0,0,0)',
-                font=dict(color='#111111', size=12)
-            ),
-            barmode='group',
-            bargap=0.15,
-            bargroupgap=0.1,
-            height=450,
-            margin=dict(t=80, b=100, l=60, r=40)
-        )
-        
-        st.plotly_chart(fig_scenario, use_container_width=True)
-    
-    with col_right:
-        st.subheader("📊 Scenario-påvirkning")
-        
-        # Key impact metrics
-        max_impact = abs(scenario_df["Endring"]).max()
-        avg_impact = scenario_df["Endring"].mean()
-        
-        # Party most affected
-        most_affected = scenario_df.loc[scenario_df["Endring"].abs().idxmax()]
-        
-        st.metric("Største endring", f"{most_affected['Endring']:+.1f} poeng", 
-                 delta=f"{most_affected.name}")
-        st.metric("Gj.snitt påvirkning", f"{avg_impact:+.1f} poeng")
-        
-        # Category removal info
-        st.markdown("---")
-        st.subheader("🗑️ Fjernet kategori")
-        
-        st.metric("Spørsmål fjernet", f"{category_questions}/{total_questions}")
-        
-        if total_questions > 0:
-            removal_pct = (category_questions / total_questions) * 100
-            st.metric("Andel fjernet", f"{removal_pct:.1f}%")
-        
-        # Impact assessment
-        st.markdown("---")
-        st.subheader("🎯 Konsekvenser")
-        
-        # Count parties with different impact levels
-        high_impact = (abs(scenario_df["Endring"]) > 3).sum()
-        medium_impact = ((abs(scenario_df["Endring"]) >= 1) & (abs(scenario_df["Endring"]) <= 3)).sum()
-        low_impact = (abs(scenario_df["Endring"]) < 1).sum()
-        
-        st.metric("Høy påvirkning", f"{high_impact} partier")
-        st.metric("Moderat påvirkning", f"{medium_impact} partier") 
-        st.metric("Lav påvirkning", f"{low_impact} partier")
-        
-        # Overall scenario assessment
-        if max_impact > 5:
-            st.error(f"🔴 Kritisk: Fjerning av «{category_to_drop}» har stor påvirkning")
-        elif max_impact > 2:
-            st.warning(f"🟡 Advarsel: Moderat påvirkning fra fjerning")
-        else:
-            st.success(f"🟢 Minimal påvirkning fra fjerning")
-        
-        # Scenario recommendation
-        st.markdown("---")
-        st.subheader("💡 Anbefaling")
-        
-        if category_questions == 0:
-            st.info("ℹ️ Ingen spørsmål i denne kategorien")
-        elif max_impact < 1:
-            st.success("✅ Trygt å fjerne - minimal påvirkning")
-        elif max_impact < 3:
-            st.warning("⚠️ Vurder nøye - moderat påvirkning")
-        else:
-            st.error("🚨 Ikke anbefalt - høy påvirkning")
-    
-    # Detailed impact table
-    with st.expander("📋 Se detaljert påvirkning av fjerning"):
-        display_impact_df = scenario_df[["Med alle kategorier", f"Uten {category_to_drop}", "Endring", "Endring (%)"]].copy()
-        display_impact_df["Påvirkning"] = display_impact_df["Endring"].apply(
-            lambda x: "🔴 Høy nedgang" if x < -3 else 
-                      "🟡 Moderat nedgang" if x < -1 else
-                      "🟢 Minimal endring" if abs(x) < 1 else
-                      "🟡 Moderat økning" if x < 3 else
-                      "🔴 Høy økning"
-        )
-        
-        # Style the dataframe
-        st.dataframe(
-            display_impact_df.rename(columns={
-                "Med alle kategorier": "Med alle kategorier",
-                f"Uten {category_to_drop}": f"Uten «{category_to_drop}»",
-                "Endring": "Endring (poeng)",
-                "Endring (%)": "Endring (%)",
-                "Påvirkning": "Påvirkningsnivå"
-            }),
-            use_container_width=True
-        )
-
-with tab7:
-    st.header("Diskurs-analyse: Hvordan medier former politisk samtale")
-    
-    create_explanation_card(
-        "Medienes rolle i politisk diskurs",
-        "Ulike medier kan forme politisk diskurs forskjellig. Her sammenligner vi hvordan " +
-        "NRK og TV2 sine spørsmål skaper ulike mønstre av enighet og uenighet."
-    )
-    
-    # Analyze source characteristics
-    source_comparison, nrk_analysis, tv2_analysis = analyze_source_characteristics(nrk, tv2, parties)
-    
-    # Source analysis selector
-    source_analysis = st.selectbox(
-        "Analyseområde:",
-        ["Spørsmålsstrategi", "Polariseringstendenser", "Politisk framing", "Mediebias"]
-    )
-    
-    if source_analysis == "Spørsmålsstrategi":
-        st.subheader("📝 Hvordan stiller kildene spørsmål?")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.write("**NRK Spørsmålsstrategi:**")
-            
-            # Question complexity (word count as proxy)
-            nrk_complexity = nrk_analysis['Spm'].str.split().str.len().mean()
-            st.metric("Gj.snitt ordlengde", f"{nrk_complexity:.1f} ord")
-            
-            # Question types
-            nrk_yes_no = nrk_analysis['Spm'].str.contains('Bør|Skal|Er det', case=False, na=False).mean()
-            st.metric("Ja/Nei spørsmål (%)", f"{nrk_yes_no*100:.1f}%")
-            
-            # Emotional language
-            emotional_words = ['viktig', 'farlig', 'nødvendig', 'kritisk', 'alvorlig']
-            nrk_emotional = nrk_analysis['Spm'].str.contains('|'.join(emotional_words), case=False, na=False).mean()
-            st.metric("Emosjonelle ord (%)", f"{nrk_emotional*100:.1f}%")
-        
-        with col2:
-            st.write("**TV2 Spørsmålsstrategi:**")
-            
-            tv2_complexity = tv2_analysis['Spm'].str.split().str.len().mean()
-            st.metric("Gj.snitt ordlengde", f"{tv2_complexity:.1f} ord")
-            
-            tv2_yes_no = tv2_analysis['Spm'].str.contains('Bør|Skal|Er det', case=False, na=False).mean()
-            st.metric("Ja/Nei spørsmål (%)", f"{tv2_yes_no*100:.1f}%")
-            
-            tv2_emotional = tv2_analysis['Spm'].str.contains('|'.join(emotional_words), case=False, na=False).mean()
-            st.metric("Emosjonelle ord (%)", f"{tv2_emotional*100:.1f}%")
-        
-        # Strategy comparison visualization
-        strategy_comparison = pd.DataFrame({
-            'Dimensjon': ['Ordlengde', 'Ja/Nei format', 'Emosjonelle ord'],
-            'NRK': [nrk_complexity, nrk_yes_no*100, nrk_emotional*100],
-            'TV2': [tv2_complexity, tv2_yes_no*100, tv2_emotional*100]
-        })
-        
-        fig_strategy = go.Figure()
-        fig_strategy.add_trace(go.Bar(name='NRK', x=strategy_comparison['Dimensjon'], y=strategy_comparison['NRK'], marker_color=COL_NEG))
-        fig_strategy.add_trace(go.Bar(name='TV2', x=strategy_comparison['Dimensjon'], y=strategy_comparison['TV2'], marker_color=COL_POS))
-        
-        fig_strategy.update_layout(
-            title="Spørsmålsstrategier: NRK vs TV2",
-            barmode='group',
-            plot_bgcolor=BG, paper_bgcolor=BG,
-            font=dict(color="#111111")
-        )
-        
-        st.plotly_chart(fig_strategy, use_container_width=True)
-        
-    elif source_analysis == "Polariseringstendenser":
-        st.subheader("📊 Sammenligning av polariseringsmønstre")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("NRK Polarisering")
-            
-            fig_nrk_polar = px.scatter(
-                nrk_analysis.head(50),
-                x="mu", y="polarization_score",
-                size="std",
-                color="consensus_level",
-                hover_data=["Spm", "political_lean"],
-                color_discrete_sequence=[COL_POS, COL_NEU, COL_NEG, "#ff4444"]
-            )
-            
-            fig_nrk_polar.update_layout(
-                title="NRK: Retning vs Polarisering",
-                xaxis_title="Politisk retning",
-                yaxis_title="Polariseringsscore",
-                plot_bgcolor=BG, paper_bgcolor=BG,
-                font=dict(color="#111111"),
-                showlegend=False
-            )
-            
-            st.plotly_chart(fig_nrk_polar, use_container_width=True)
-        
-        with col2:
-            st.subheader("TV2 Polarisering")
-            
-            fig_tv2_polar = px.scatter(
-                tv2_analysis.head(50),
-                x="mu", y="polarization_score", 
-                size="std",
-                color="consensus_level",
-                hover_data=["Smp", "political_lean"] if "Smp" in tv2_analysis.columns else ["Spm", "political_lean"],
-                color_discrete_sequence=[COL_POS, COL_NEU, COL_NEG, "#ff4444"]
-            )
-            
-            fig_tv2_polar.update_layout(
-                title="TV2: Retning vs Polarisering",
-                xaxis_title="Politisk retning",
-                yaxis_title="Polariseringsscore",
-                plot_bgcolor=BG, paper_bgcolor=BG,
-                font=dict(color="#111111"),
-                showlegend=False
-            )
-            
-            st.plotly_chart(fig_tv2_polar, use_container_width=True)
-        
-        # Comparative statistics
-        st.subheader("📊 Polariseringsstatistikk")
-        
-        polar_stats = pd.DataFrame({
-            'Kilde': ['NRK', 'TV2'],
-            'Gj.snitt polarisering': [nrk_analysis['polarization_score'].mean(), tv2_analysis['polarization_score'].mean()],
-            'Maks polarisering': [nrk_analysis['polarization_score'].max(), tv2_analysis['polarization_score'].max()],
-            'Dyp polarisering (%)': [
-                (nrk_analysis['consensus_level'] == 'Dyp polarisering').mean() * 100,
-                (tv2_analysis['consensus_level'] == 'Dyp polarisering').mean() * 100
-            ]
-        })
-        
-        st.dataframe(polar_stats.round(3), use_container_width=True)
-    
-    elif source_analysis == "Politisk framing":
-        st.subheader("🎭 Hvordan framer kildene politikk?")
-        
-        # Analyze political framing
-        framing_analysis = {}
-        
-        for source, df_prep in [("NRK", nrk_analysis), ("TV2", tv2_analysis)]:
-            # Positive vs negative framing
-            positive_frame = df_prep[df_prep['mu'] > 0.5]
-            negative_frame = df_prep[df_prep['mu'] < -0.5]
-            
-            framing_analysis[source] = {
-                'positive_questions': len(positive_frame) / len(df_prep),
-                'negative_questions': len(negative_frame) / len(df_prep),
-                'neutral_questions': len(df_prep[(df_prep['mu'] >= -0.5) & (df_prep['mu'] <= 0.5)]) / len(df_prep),
-                'avg_extremeness': df_prep['mu'].abs().mean(),
-                'controversial_focus': (df_prep['std'] > 1.0).mean()
-            }
-        
-        # Visualization
-        framing_metrics = ['positive_questions', 'negative_questions', 'neutral_questions', 
-                          'avg_extremeness', 'controversial_focus']
-        
-        framing_labels = ['Pro-forslag (%)', 'Anti-forslag (%)', 'Nøytrale (%)', 
-                         'Gj.snitt ekstremhet', 'Kontrovers-fokus (%)']
-        
-        nrk_framing = [framing_analysis['NRK'][m] * 100 if m != 'avg_extremeness' else framing_analysis['NRK'][m] for m in framing_metrics]
-        tv2_framing = [framing_analysis['TV2'][m] * 100 if m != 'avg_extremeness' else framing_analysis['TV2'][m] for m in framing_metrics]
-        
-        fig_framing = go.Figure()
-        fig_framing.add_trace(go.Scatterpolar(r=nrk_framing, theta=framing_labels, fill='toself', name='NRK', line_color=COL_NEG))
-        fig_framing.add_trace(go.Scatterpolar(r=tv2_framing, theta=framing_labels, fill='toself', name='TV2', line_color=COL_POS))
-        
-        fig_framing.update_layout(
-            title="Politisk framing: NRK vs TV2",
-            polar=dict(radialaxis=dict(visible=True, range=[0, max(max(nrk_framing), max(tv2_framing))])),
-            plot_bgcolor=BG, paper_bgcolor=BG,
-            font=dict(color="#111111")
-        )
-        
-        st.plotly_chart(fig_framing, use_container_width=True)
-    
-    else:  # Mediebias
-        st.subheader("📺 Mediebias-analyse")
-        
-        # Source characteristic comparison
-        metrics = [
-            'avg_polarization',
-            'high_consensus_questions', 
-            'polarizing_questions',
-            'positive_leaning_questions',
-            'negative_leaning_questions'
-        ]
-        
-        metric_labels = [
-            'Gj.snitt polarisering',
-            'Høy enighet (%)',
-            'Polariserende (%)',
-            'Pro-forslag (%)', 
-            'Anti-forslag (%)'
-        ]
-        
-        nrk_values = [source_comparison['NRK'][m] * 100 if 'questions' in m else source_comparison['NRK'][m] for m in metrics]
-        tv2_values = [source_comparison['TV2'][m] * 100 if 'questions' in m else source_comparison['TV2'][m] for m in metrics]
-        
-        fig_sources = go.Figure()
-        
-        fig_sources.add_trace(go.Bar(
-            name='NRK',
-            x=metric_labels,
-            y=nrk_values,
-            marker_color=COL_NEG,
-            text=[f"{v:.1f}" for v in nrk_values],
-            textposition='auto'
-        ))
-        
-        fig_sources.add_trace(go.Bar(
-            name='TV2',
-            x=metric_labels,
-            y=tv2_values,
-            marker_color=COL_POS,
-            text=[f"{v:.1f}" for v in tv2_values],
-            textposition='auto'
-        ))
-        
-        fig_sources.update_layout(
-            title="Diskurs-karakteristikk: NRK vs TV2",
-            xaxis_title="Diskurs-dimensjoner",
-            yaxis_title="Score/Prosent",
-            barmode='group',
-            xaxis=dict(tickangle=45),
-            plot_bgcolor=BG,
-            paper_bgcolor=BG,
-            font=dict(color="#111111")
-        )
-        
-        st.plotly_chart(fig_sources, use_container_width=True)
-        
-        # Key differences analysis
-        st.subheader("🔍 Nøkkelforskjeller")
-        
-        polarization_diff = source_comparison['TV2']['avg_polarization'] - source_comparison['NRK']['avg_polarization']
-        consensus_diff = source_comparison['TV2']['high_consensus_questions'] - source_comparison['NRK']['high_consensus_questions']
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.metric("Polariseringsforskyell", f"{polarization_diff:+.3f}", 
-                     delta="TV2 vs NRK")
-            
-            if abs(polarization_diff) > 0.1:
-                if polarization_diff > 0:
-                    st.warning("📺 TV2 stiller mer polariserende spørsmål")
-                else:
-                    st.warning("📻 NRK stiller mer polariserende spørsmål")
-            else:
-                st.success("⚖️ Begge kilder har lignende polariseringsnivå")
-        
-        with col2:
-            st.metric("Enighetsforskjell", f"{consensus_diff*100:+.1f}%",
-                     delta="TV2 vs NRK")
-            
-            if abs(consensus_diff) > 0.1:
-                if consensus_diff > 0:
-                    st.info("📺 TV2 har flere spørsmål med bred enighet")
-                else:
-                    st.info("📻 NRK har flere spørsmål med bred enighet")
-
-with tab8:
-    st.header("🤖 AI & Datakvalitet")
-    st.write("Utforsk hvordan datakvalitet påvirker AI-resultater gjennom valgomatdata.")
-    
-    # Data quality dimensions selector
-    quality_dim = st.selectbox(
-        "Velg datakvalitetsdimensjon:",
-        ["📊 Oversikt", "🎯 Accuracy", "📋 Completeness", "🔄 Consistency", 
-         "⏰ Timeliness", "✅ Validity", "🎭 Uniqueness", "🔬 Advanced Analysis"]
-    )
-    
-    if quality_dim == "📊 Oversikt":
-        st.subheader("Datakvalitetens 6 dimensjoner + AI Impact")
+        # Category distribution
+        categories = tv2['Kategori'].dropna()
+        category_counts = categories.value_counts()
+        category_pct = (category_counts / category_counts.sum() * 100).round(1)
         
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Create overview visualization
-            dimensions = ["Accuracy", "Completeness", "Consistency", "Timeliness", "Validity", "Uniqueness"]
-            scores = [85, 92, 78, 88, 95, 90]  # Example scores
+            # Create donut chart
+            fig_donut = px.pie(
+                values=category_counts.values,
+                names=category_counts.index,
+                hole=0.4,
+                title="Fordeling av politiske tema"
+            )
             
+            fig_donut.update_traces(
+                textposition='inside',
+                textinfo='percent+label',
+                marker=dict(line=dict(color='white', width=2))
+            )
+            
+            fig_donut.update_layout(
+                plot_bgcolor=BG,
+                paper_bgcolor=BG,
+                font=dict(color="#111111")
+            )
+            
+            st.plotly_chart(fig_donut, use_container_width=True)
+        
+        with col2:
+            st.subheader("📈 Temastatistikk")
+            
+            for i, (tema, antall) in enumerate(category_counts.head(5).items()):
+                prosent = category_pct[tema]
+                st.markdown(f"""
+                <div class="explanation-card" style="margin: 5px 0;">
+                    <h4 style="margin: 0; font-size: 14px;">#{i+1}. {tema}</h4>
+                    <p style="margin: 0; font-size: 12px;">{antall} spørsmål ({prosent}%)</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.metric("Totalt antall tema", len(category_counts))
+            st.metric("Største tema", f"{category_counts.index[0]} ({category_counts.iloc[0]} spm)")
+            
+            # Balance check
+            max_pct = category_pct.max()
+            if max_pct > 30:
+                st.warning(f"⚠️ Tema '{category_counts.index[0]}' dominerer ({max_pct}%)")
+            else:
+                st.success("✅ Godt balanserte tema")
+        
+        # Topic-wise controversy analysis
+        st.subheader("Hvilke tema skaper mest uenighet?")
+        
+        tv2_with_analysis = prep_data_with_friendly_labels(tv2, parties)
+        
+        if len(tv2_with_analysis) > 0:
+            topic_controversy = tv2_with_analysis.groupby('Kategori')['disagreement'].agg(['mean', 'max', 'count']).round(3)
+            topic_controversy.columns = ['Gj_uenighet', 'Maks_uenighet', 'Antall_sporsmal']
+            topic_controversy = topic_controversy.sort_values('Gj_uenighet', ascending=False)
+            
+            fig_controversy = px.bar(
+                topic_controversy.reset_index(),
+                x='Kategori',
+                y='Gj_uenighet',
+                color='Gj_uenighet',
+                color_continuous_scale='Reds',
+                title="Gjennomsnittlig uenighet per tema"
+            )
+            
+            fig_controversy.update_layout(
+                xaxis_tickangle=45,
+                plot_bgcolor=BG, paper_bgcolor=BG,
+                xaxis_title="Politisk tema",
+                yaxis_title="Gjennomsnittlig uenighet mellom partier"
+            )
+            
+            st.plotly_chart(fig_controversy, use_container_width=True)
+            
+            # Show top controversial topics
+            st.write("**Mest kontroversielle tema:**")
+            for i, (tema, stats) in enumerate(topic_controversy.head(3).iterrows(), 1):
+                st.write(f"{i}. **{tema}** - Uenighet: {stats['Gj_uenighet']:.2f} ({stats['Antall_sporsmal']} spørsmål)")
+
+with tab4:
+    st.header("⚖️ Hva skjer hvis vi vekter tema ulikt?")
+    
+    create_tv2_only_explanation()
+    
+    create_explanation_card(
+        "Utforsk vektingseffekter",
+        "I virkeligheten bryr folk seg mer om noen tema enn andre. " +
+        "Hva skjer hvis vi gir økonomi-spørsmål dobbelt så mye vekt som andre tema?",
+        "⚖️"
+    )
+    
+    if 'Kategori' not in tv2.columns:
+        st.error("Denne analysen krever TV2-data med kategorier")
+    else:
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            n_questions = st.slider("Antall spørsmål å inkludere", 10, 50, 25, key="weight_q")
+        
+        with col2:
+            available_categories = tv2['Kategori'].dropna().unique()
+            boost_category = st.selectbox("Tema å vektlegge ekstra", available_categories)
+        
+        with col3:
+            weight_factor = st.slider("Hvor mye ekstra vekt?", 1.0, 5.0, 2.0, 0.5)
+        
+        # Calculate weighted vs unweighted scores
+        subset = tv2.head(n_questions)
+        
+        # Original scores
+        original_scores = subset[parties].sum()
+        
+        # Weighted scores
+        weights = subset['Kategori'].apply(lambda cat: weight_factor if cat == boost_category else 1.0)
+        weighted_scores = (subset[parties].multiply(weights, axis=0)).sum()
+        
+        # Create comparison
+        comparison = pd.DataFrame({
+            "Før_vekting": original_scores,
+            "Etter_vekting": weighted_scores,
+            "Endring": weighted_scores - original_scores,
+            "Endring_pst": ((weighted_scores - original_scores) / original_scores * 100).round(1)
+        }).sort_values("Før_vekting", ascending=False)
+        
+        col_left, col_right = st.columns([2.5, 1.5])
+        
+        with col_left:
+            create_how_to_read_box("party_comparison")
+            
+            fig = go.Figure()
+            
+            # Before weighting
+            fig.add_trace(go.Bar(
+                name='Før vekting',
+                x=comparison.index,
+                y=comparison["Før_vekting"],
+                marker_color=COL_NEU,
+                text=[f"{val:.0f}" for val in comparison["Før_vekting"]],
+                textposition='auto'
+            ))
+            
+            # After weighting  
+            fig.add_trace(go.Bar(
+                name=f'Etter {weight_factor}× vekt på "{boost_category}"',
+                x=comparison.index,
+                y=comparison["Etter_vekting"],
+                marker_color=COL_POS,
+                text=[f"{val:.0f}" for val in comparison["Etter_vekting"]],
+                textposition='auto'
+            ))
+            
+            fig.update_layout(
+                title=f"Effekt av å vektlegge '{boost_category}' {weight_factor}× høyere",
+                xaxis_title="Partier",
+                yaxis_title="Samlet score",
+                barmode='group',
+                xaxis_tickangle=45,
+                plot_bgcolor=BG, paper_bgcolor=BG
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col_right:
+            st.subheader("Vektings-påvirkning")
+            
+            max_change = comparison["Endring"].abs().max()
+            most_affected = comparison.loc[comparison["Endring"].abs().idxmax()]
+            
+            st.metric("Største endring", f"{most_affected['Endring']:+.1f} poeng")
+            st.metric("Mest påvirket parti", most_affected.name)
+            st.metric("Gjennomsnittlig endring", f"{comparison['Endring'].mean():+.1f} poeng")
+            
+            # Count questions in boosted category
+            category_questions = subset[subset['Kategori'] == boost_category].shape[0]
+            st.metric("Spørsmål i vektet tema", f"{category_questions}/{len(subset)}")
+            
+            # Impact assessment
+            if max_change > 5:
+                st.warning(f"⚠️ Stor påvirkning! Vekting av '{boost_category}' endrer rangeringer betydelig.")
+            elif max_change > 2:
+                st.info(f"📊 Moderat påvirkning fra vekting av '{boost_category}'.")
+            else:
+                st.success(f"✅ Minimal påvirkning fra vekting av '{boost_category}'.")
+            
+        # Detailed results
+        with st.expander("📋 Detaljerte endringer"):
+            display_comparison = comparison[["Før_vekting", "Etter_vekting", "Endring", "Endring_pst"]].copy()
+            display_comparison.columns = ["Før vekting", "Etter vekting", "Endring (poeng)", "Endring (%)"]
+            display_comparison["Retning"] = display_comparison["Endring (poeng)"].apply(
+                lambda x: "📈 Økt" if x > 0.5 else "📉 Redusert" if x < -0.5 else "➡️ Uendret"
+            )
+            st.dataframe(display_comparison, use_container_width=True)
+
+with tab5:
+    st.header("Hva om vi fjerner et tema helt?")
+    
+    create_tv2_only_explanation()
+    
+    create_explanation_card(
+        "Scenario-analyse",
+        "Noen ganger er det nyttig å se hva som skjer hvis vi ignorerer visse tema helt. " +
+        "For eksempel: Hvordan ser partiene ut hvis vi ser bort fra alle økonomi-spørsmål?"
+    )
+    
+    if 'Kategori' not in tv2.columns:
+        st.error("Denne analysen krever TV2-data med kategorier")
+    else:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            n_questions_scenario = st.slider("Antall spørsmål", 10, 40, 20, key="scenario_q")
+        
+        with col2:
+            available_cats = tv2['Kategori'].dropna().unique()
+            remove_category = st.selectbox("Tema å fjerne", available_cats)
+        
+        # Calculate scenarios
+        full_data = tv2.head(n_questions_scenario)
+        without_category = tv2[tv2['Kategori'] != remove_category].head(n_questions_scenario)
+        
+        full_scores = full_data[parties].sum()
+        reduced_scores = without_category[parties].sum()
+        
+        scenario_comparison = pd.DataFrame({
+            "Med_alle_tema": full_scores,
+            f"Uten_{remove_category}": reduced_scores,
+            "Endring": reduced_scores - full_scores,
+            "Endring_pst": ((reduced_scores - full_scores) / full_scores * 100).round(1)
+        }).sort_values("Med_alle_tema", ascending=False)
+        
+        col_left, col_right = st.columns([2.5, 1.5])
+        
+        with col_left:
+            fig_scenario = go.Figure()
+            
+            # With all themes
+            fig_scenario.add_trace(go.Bar(
+                name='Med alle tema',
+                x=scenario_comparison.index,
+                y=scenario_comparison["Med_alle_tema"],
+                marker_color=COL_NEU,
+                text=[f"{val:.0f}" for val in scenario_comparison["Med_alle_tema"]],
+                textposition='auto'
+            ))
+            
+            # Without selected theme
+            fig_scenario.add_trace(go.Bar(
+                name=f'Uten "{remove_category}"',
+                x=scenario_comparison.index, 
+                y=scenario_comparison[f"Uten_{remove_category}"],
+                marker_color=COL_NEG,
+                text=[f"{val:.0f}" for val in scenario_comparison[f"Uten_{remove_category}"]],
+                textposition='auto'
+            ))
+            
+            fig_scenario.update_layout(
+                title=f"Scenario: Hva om vi fjerner alle spørsmål om '{remove_category}'?",
+                xaxis_title="Partier",
+                yaxis_title="Samlet score",
+                barmode='group',
+                xaxis_tickangle=45,
+                plot_bgcolor=BG, paper_bgcolor=BG
+            )
+            
+            st.plotly_chart(fig_scenario, use_container_width=True)
+        
+        with col_right:
+            st.subheader("🎯 Scenario-konsekvenser")
+            
+            max_impact = scenario_comparison["Endring"].abs().max()
+            most_impacted = scenario_comparison.loc[scenario_comparison["Endring"].abs().idxmax()]
+            
+            st.metric("Største påvirkning", f"{most_impacted['Endring']:+.1f} poeng")
+            st.metric("Mest påvirket parti", most_impacted.name)
+            
+            # Count removed questions
+            removed_questions = full_data[full_data['Kategori'] == remove_category].shape[0]
+            st.metric("Spørsmål fjernet", f"{removed_questions}/{len(full_data)}")
+            
+            if removed_questions == 0:
+                st.info("ℹ️ Ingen spørsmål i dette temaet")
+            elif max_impact < 2:
+                st.success(f"✅ Minimal påvirkning av å fjerne '{remove_category}'")
+            elif max_impact < 5:
+                st.warning(f"⚠️ Moderat påvirkning av å fjerne '{remove_category}'") 
+            else:
+                st.error(f"🚨 Stor påvirkning! '{remove_category}' er viktig for partirangeringen.")
+        
+        # Rankings change analysis
+        st.subheader("🏆 Endringer i rangering")
+        
+        full_ranking = full_scores.rank(method='min', ascending=False)
+        reduced_ranking = reduced_scores.rank(method='min', ascending=False)
+        
+        ranking_changes = pd.DataFrame({
+            "Parti": parties,
+            "Rangering_før": [full_ranking[p] for p in parties],
+            "Rangering_etter": [reduced_ranking[p] for p in parties],
+            "Endring_i_rangering": [reduced_ranking[p] - full_ranking[p] for p in parties]
+        }).sort_values("Endring_i_rangering", key=abs, ascending=False)
+        
+        # Show parties with biggest ranking changes
+        big_changes = ranking_changes[ranking_changes["Endring_i_rangering"].abs() > 1]
+        
+        if len(big_changes) > 0:
+            st.write("**Partier med endret rangering:**")
+            for _, row in big_changes.iterrows():
+                direction = "📈" if row["Endring_i_rangering"] < 0 else "📉"
+                st.write(f"{direction} **{row['Parti']}**: {row['Rangering_før']:.0f}. → {row['Rangering_etter']:.0f}. plass")
+        else:
+            st.success("✅ Ingen store endringer i partirangering")
+
+with tab6:
+    st.header("🤖 AI & Datakvalitet")
+    st.write("Utforsk hvordan datakvalitet påvirker AI-resultater gjennom valgomatdata.")
+    
+    create_explanation_card(
+        "Hvorfor er datakvalitet viktig?",
+        "AI-systemer er kun så gode som dataene de er trent på. Dårlig datakvalitet kan føre til " +
+        "feilaktige konklusjoner, skjeve algoritmer og upålitelige anbefalinger. " +
+        "Her kan du utforske hvordan ulike datakvalitetsutfordringer påvirker AI-ytelse.",
+        "🔍"
+    )
+    
+    # Data quality dimensions selector
+    quality_dim = st.selectbox(
+        "Velg datakvalitetsdimensjon:",
+        ["📊 Oversikt", "🎯 Nøyaktighet", "📋 Kompletthet", "🔄 Konsistens", 
+         "⏰ Aktualitet", "✅ Validitet", "🎭 Unikalitet"]
+    )
+    
+    if quality_dim == "📊 Oversikt":
+        st.subheader("De 6 dimensjonene av datakvalitet")
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            quality_scores = calculate_quality_scores(parties, nrk, tv2)
+            dimensions = list(quality_scores.keys())
+            scores = list(quality_scores.values())
+            
+            # Create interactive radar chart
             fig_radar = go.Figure()
             
             fig_radar.add_trace(go.Scatterpolar(
                 r=scores,
                 theta=dimensions,
                 fill='toself',
-                name='Datakvalitet Score',
-                line_color=COLORS[0],
-                fillcolor=f'rgba(255, 140, 69, 0.3)'
+                name='Valgomatdata Score',
+                line_color=COL_POS,
+                fillcolor=f'rgba(151, 210, 236, 0.3)',
+                hovertemplate="<b>%{theta}</b><br>Score: %{r:.1f}%<br>Klikk for detaljer<extra></extra>"
             ))
             
             fig_radar.update_layout(
                 polar=dict(
                     radialaxis=dict(
                         visible=True,
-                        range=[0, 100]
+                        range=[0, 100],
+                        tickfont_size=10
                     )),
                 showlegend=False,
-                title="Datakvalitetsprofil for Valgomatdata",
+                title="Datakvalitetsprofil for Valgomatdata<br><sub>Klikk på en dimensjon for å utforske</sub>",
                 plot_bgcolor=BG,
                 paper_bgcolor=BG,
-                font=dict(color="#111111")
+                font=dict(color="#111111"),
+                height=400
             )
             
-            st.plotly_chart(fig_radar, use_container_width=True)
+            # Make chart clickable
+            selected_point = st.plotly_chart(fig_radar, use_container_width=True, 
+                                            on_select="rerun", selection_mode="points")
+            
+            # Handle click interactions
+            if selected_point and "selection" in selected_point and selected_point["selection"]["points"]:
+                clicked_dimension_idx = selected_point["selection"]["points"][0]["pointIndex"]
+                clicked_dimension = dimensions[clicked_dimension_idx]
+                clicked_score = scores[clicked_dimension_idx]
+                
+                st.success(f"🎯 **{clicked_dimension}** valgt: {clicked_score:.0f}%")
+                
+                # Show detailed information about clicked dimension
+                dimension_details = {
+                    "Nøyaktighet": {
+                        "description": "Måler hvor godt dataene reflekterer virkeligheten",
+                        "calculation": "Basert på konsistens mellom NRK og TV2 kilder",
+                        "interpretation": "Høy score = god samsvar mellom kilder, lav bias"
+                    },
+                    "Kompletthet": {
+                        "description": "Måler hvor mye av dataene som faktisk er tilgjengelig",
+                        "calculation": "Prosent av celler som ikke er tomme eller manglende",
+                        "interpretation": "Høy score = få manglende verdier"
+                    },
+                    "Konsistens": {
+                        "description": "Måler hvor stabilt og ikke-motsigelsesfullt dataene er",
+                        "calculation": "Basert på variabilitet i partisvar (lavere variabilitet = mer konsistent)",
+                        "interpretation": "Høy score = mindre variabilitet, mer stabile mønstre"
+                    },
+                    "Aktualitet": {
+                        "description": "Måler hvor oppdaterte dataene er",
+                        "calculation": "Antatt at data er 6 måneder gamle, 2% frafall per måned",
+                        "interpretation": "Høy score = ferske data, lav score = utdaterte data"
+                    },
+                    "Validitet": {
+                        "description": "Måler om dataene har korrekt format og gyldige verdier",
+                        "calculation": "Prosent av verdier som er i forventet range [-2, +2]",
+                        "interpretation": "Høy score = få formatfeil eller ugyldige verdier"
+                    },
+                    "Unikalitet": {
+                        "description": "Måler grad av duplikater og overrepresentasjon",
+                        "calculation": "Basert på balanse mellom antall spørsmål og kategorier",
+                        "interpretation": "Høy score = god balanse, få duplikater"
+                    }
+                }
+                
+                if clicked_dimension in dimension_details:
+                    details = dimension_details[clicked_dimension]
+                    
+                    with st.expander(f"📋 Detaljer om {clicked_dimension}", expanded=True):
+                        st.write(f"**Beskrivelse:** {details['description']}")
+                        st.write(f"**Beregning:** {details['calculation']}")  
+                        st.write(f"**Tolkning:** {details['interpretation']}")
+                        
+                        # Visual indicator
+                        if clicked_score >= 90:
+                            st.success("🟢 Utmerket kvalitet")
+                        elif clicked_score >= 75:
+                            st.warning("🟡 God kvalitet")
+                        elif clicked_score >= 60:
+                            st.warning("🟠 Akseptabel kvalitet")
+                        else:
+                            st.error("🔴 Lav kvalitet")
         
         with col2:
-            st.subheader("AI Impact Score")
+            st.subheader("Kvalitetsvurdering")
             overall_score = np.mean(scores)
-            ai_confidence = simulate_ai_confidence_degradation(overall_score)
             
-            st.metric("Overall Data Quality", f"{overall_score:.0f}%", 
-                     delta=f"{overall_score-75:.0f}% vs baseline")
-            st.metric("AI Confidence", f"{ai_confidence:.0f}%",
-                     delta=f"{ai_confidence-95:.0f}% vs optimal")
+            st.metric("Samlet kvalitetsscore", f"{overall_score:.0f}%")
             
-            # Color-coded recommendations
             if overall_score >= 90:
-                st.success("🟢 Excellent data quality - AI ready!")
+                st.success("🟢 Utmerket datakvalitet!")
+                recommendation = "Dataene er klare for avanserte AI-analyser"
             elif overall_score >= 75:
-                st.warning("🟡 Good quality - Minor improvements needed")
+                st.warning("🟡 God kvalitet - noen forbedringer mulige")
+                recommendation = "Brukbar for de fleste AI-applikasjoner, men kan forbedres"
+            elif overall_score >= 60:
+                recommendation = "Krever forbedringer før pålitelig AI-bruk"
+                st.warning("🟠 Akseptabel kvalitet")
             else:
-                st.error("🔴 Poor quality - Major issues detected")
+                st.error("🔴 Lav kvalitet - store forbedringer nødvendig")
+                recommendation = "Omfattende datarengjøring nødvendig"
+            
+            st.info(f"**Anbefaling:** {recommendation}")
+            
+            # Show top/bottom dimensions
+            score_df = pd.DataFrame({"Dimensjon": dimensions, "Score": scores}).sort_values("Score", ascending=False)
+            
+            st.write("**🏆 Best:**")
+            st.write(f"{score_df.iloc[0]['Dimensjon']}: {score_df.iloc[0]['Score']:.0f}%")
+            
+            st.write("**🎯 Trenger forbedring:**")  
+            st.write(f"{score_df.iloc[-1]['Dimensjon']}: {score_df.iloc[-1]['Score']:.0f}%")
         
-        st.info("💡 **Workshop-oppgave**: Velg en dimensjon ovenfor for å se hvordan den påvirker AI-resultater!")
+        create_explanation_card(
+            "Tips for interaksjon",
+            "Klikk på en dimensjon i radar-diagrammet ovenfor for å se detaljert informasjon om " +
+            "hvordan scoren beregnes og hva den betyr for AI-kvalitet. " +
+            "Velg andre dimensjoner fra dropdown-menyen for å utforske spesifikke problemer."
+        )
     
-    elif quality_dim == "🎯 Accuracy":
-        st.subheader("Accuracy: Hvordan spørsmålsformulering påvirker AI-anbefalinger")
+    elif quality_dim == "🎯 Nøyaktighet":
+        st.subheader("Nøyaktighet: Hvordan skjeve spørsmål påvirker AI-anbefalinger")
+        
+        create_explanation_card(
+            "Problemet med skjevhet",
+            "Måten spørsmål formuleres på kan påvirke svarene dramatisk. AI-systemer som lærer " +
+            "fra skjeve data vil gi skjeve anbefalinger - dette kalles 'bias in, bias out'.",
+            "⚠️", "warning"
+        )
         
         # Interactive bias demonstration
-        bias_level = st.slider("Grad av skjevhet i spørsmål:", 0.0, 1.0, 0.3, 0.1)
+        bias_level = st.slider("Grad av skjevhet i spørsmålsformulering:", 0.0, 1.0, 0.3, 0.1, 
+                              key="bias_slider", help="Høyere verdi = mer skjev formulering")
+        
+        # Add explicit regeneration trigger
+        if st.button("🔄 Oppdater grafer", help="Klikk hvis grafene ikke oppdateres automatisk"):
+            st.rerun()
         
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("**Nøytral formulering:**")
+            st.markdown("**🟢 Nøytral formulering:**")
             st.write("'Bør Norge øke bistanden til utviklingsland?'")
             
-            # Generate unbiased data
-            unbiased_data, _ = generate_biased_vs_unbiased_data(parties[:6], 0)
-            neutral_scores = 3 + unbiased_data * 0.5  # Scale to reasonable range
+            # Simulate neutral AI recommendations - use bias_level as seed modifier
+            np.random.seed(42 + int(bias_level * 100))  # Change seed based on bias level
+            neutral_parties = parties[:6]  # Use first 6 parties for simplicity
+            neutral_scores = 3 + np.random.normal(0, 0.5, len(neutral_parties))
+            neutral_scores = np.clip(neutral_scores, 1, 5)
             
-            fig_acc1 = go.Figure(data=[
-                go.Bar(x=parties[:6], y=neutral_scores, 
-                      marker_color=COLORS[1],
+            fig_neutral = go.Figure(data=[
+                go.Bar(x=neutral_parties, y=neutral_scores, 
+                      marker_color=COL_POS,
                       text=[f"{s:.1f}" for s in neutral_scores],
                       textposition='auto')
             ])
-            fig_acc1.update_layout(
-                title="Nøytral formulering - AI Anbefaling",
+            fig_neutral.update_layout(
+                title="AI-anbefaling fra nøytrale data",
                 yaxis_title="Anbefalt styrke (1-5)",
                 plot_bgcolor=BG, paper_bgcolor=BG,
                 font=dict(color="#111111"),
                 yaxis=dict(range=[0, 5])
             )
-            st.plotly_chart(fig_acc1, use_container_width=True)
+            st.plotly_chart(fig_neutral, use_container_width=True, key=f"neutral_chart_{bias_level}")
             
-            ai_conf_neutral = simulate_ai_confidence_degradation(95)
-            st.metric("AI Confidence", f"{ai_conf_neutral:.0f}%")
+            st.metric("AI Tillit", "95%", delta="Høy pålitelighet")
         
         with col2:
-            st.markdown("**Skjeve formuleringer:**")
+            st.markdown("**🔴 Skjev formulering:**")
+            
+            # Dynamic question based on bias level
             if bias_level < 0.3:
-                st.write("'Bør Norge investere smartere i bistand til utviklingsland?'")
+                question_text = "'Bør Norge investere smartere i bistand?'"
+                bias_description = "Svakt ladet språk"
             elif bias_level < 0.7:
-                st.write("'Bør Norge kaste bort penger på bistand til korrupte land?'")
+                question_text = "'Bør Norge kaste bort penger på bistand til korrupte land?'"
+                bias_description = "Moderat negativ framing"
             else:
-                st.write("'Bør Norge stoppe all meningsløs bistand til håpløse land?'")
+                question_text = "'Bør Norge stoppe meningsløs bistand til håpløse land?'"
+                bias_description = "Sterkt negativ framing"
             
-            # Generate biased data
-            _, biased_data = generate_biased_vs_unbiased_data(parties[:6], bias_level * 2)
-            biased_scores = np.maximum(0.5, 3 + biased_data * 0.5 - bias_level * 2)
+            st.write(question_text)
+            st.caption(f"*{bias_description}*")
             
-            fig_acc2 = go.Figure(data=[
-                go.Bar(x=parties[:6], y=biased_scores, 
-                      marker_color=COLORS[0],
+            # Simulate biased recommendations
+            bias_effect = bias_level * 2
+            biased_scores = neutral_scores - bias_effect + np.random.normal(0, 0.3, len(neutral_parties))
+            biased_scores = np.clip(biased_scores, 0.5, 5)
+            
+            fig_biased = go.Figure(data=[
+                go.Bar(x=neutral_parties, y=biased_scores, 
+                      marker_color=COL_NEG,
                       text=[f"{s:.1f}" for s in biased_scores],
                       textposition='auto')
             ])
-            fig_acc2.update_layout(
-                title="Skjev formulering - AI Anbefaling",
+            fig_biased.update_layout(
+                title="AI-anbefaling fra skjeve data",
                 yaxis_title="Anbefalt styrke (1-5)",
                 plot_bgcolor=BG, paper_bgcolor=BG,
                 font=dict(color="#111111"),
                 yaxis=dict(range=[0, 5])
             )
-            st.plotly_chart(fig_acc2, use_container_width=True)
+            st.plotly_chart(fig_biased, use_container_width=True, key=f"biased_chart_{bias_level}")
             
-            ai_conf_biased = simulate_ai_confidence_degradation(95 - bias_level * 40)
-            st.metric("AI Confidence", f"{ai_conf_biased:.0f}%", 
-                     delta=f"{ai_conf_biased - ai_conf_neutral:.0f}%")
+            ai_trust = max(20, 95 - bias_level * 60)
+            st.metric("AI Tillit", f"{ai_trust:.0f}%", delta=f"{ai_trust-95:.0f}%")
         
-        # Show impact on recommendations
-        st.subheader("📊 Konsekvenser for AI-anbefalinger")
+        # Show real-time impact analysis
+        st.subheader("Skjevhets-påvirkning i sanntid")
         diff_scores = np.abs(neutral_scores - biased_scores)
         avg_difference = np.mean(diff_scores)
         
         col1, col2, col3 = st.columns(3)
         col1.metric("Gjennomsnittlig avvik", f"{avg_difference:.2f} poeng")
-        col2.metric("Maks avvik", f"{np.max(diff_scores):.2f} poeng")
-        col3.metric("Partier med >1 poengs endring", f"{np.sum(diff_scores > 1)}")
+        col2.metric("Maksimalt avvik", f"{np.max(diff_scores):.2f} poeng") 
+        col3.metric("Partier sterkt påvirket", f"{np.sum(diff_scores > 1)}")
         
-        if avg_difference > 0.5:
-            st.error("🚨 **Kritisk**: Skjeve spørsmål endrer AI-anbefalinger drastisk!")
-        elif avg_difference > 0.2:
+        # Dynamic status based on current bias level
+        if avg_difference > 0.8:
+            st.error("🚨 **Kritisk**: Skjeve spørsmål endrer AI-anbefalinger dramatisk!")
+        elif avg_difference > 0.4:
             st.warning("⚠️ **Advarsel**: Moderate endringer i AI-anbefalinger")
         else:
-            st.success("✅ **Bra**: Minimal påvirkning på AI-anbefalinger")
+            st.success("✅ **Akseptabelt**: Minimal påvirkning på AI-anbefalinger")
     
-    elif quality_dim == "📋 Completeness":
-        st.subheader("Completeness: AI-ytelse vs. manglende data")
+    elif quality_dim == "📋 Kompletthet":
+        st.subheader("Kompletthet: Når AI mangler viktige data")
+        
+        create_explanation_card(
+            "Problemet med manglende data",
+            "AI-systemer kan bare lære av dataene de får. Manglende informasjon kan føre til " +
+            "feilaktige konklusjoner og unfair behandling av grupper som er underrepresenterte i dataene.",
+            "⚠️", "warning"  
+        )
         
         # Interactive missing data simulation
         missing_pct = st.slider("Prosent manglende data:", 0, 50, 20, 5)
@@ -2059,7 +1208,7 @@ with tab8:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Show impact of missing categories on party rankings
+            # Show impact of missing data on party rankings
             complete_data = tv2.head(20)[parties].sum().sort_values(ascending=False)
             
             # Simulate missing data by randomly removing questions
@@ -2074,23 +1223,23 @@ with tab8:
             fig_comp = make_subplots(
                 rows=1, cols=2,
                 subplot_titles=["Komplette data", f"Med {missing_pct}% manglende data"],
-                horizontal_spacing=0.1
+                horizontal_spacing=0.15
             )
             
             fig_comp.add_trace(
                 go.Bar(x=complete_data.index, y=complete_data.values, 
-                      marker_color=COLORS[1], name="Komplett"),
+                      marker_color=COL_POS, name="Komplett"),
                 row=1, col=1
             )
             
             fig_comp.add_trace(
                 go.Bar(x=incomplete_data.index, y=incomplete_data.values, 
-                      marker_color=COLORS[0], name="Ufullstendig"),
+                      marker_color=COL_NEG, name="Ufullstendig"),
                 row=1, col=2
             )
             
             fig_comp.update_layout(
-                title=f"Hvordan {missing_pct}% manglende data påvirker partirangeringer",
+                title=f"Hvordan {missing_pct}% manglende data påvirker AI-beslutninger",
                 plot_bgcolor=BG, paper_bgcolor=BG,
                 font=dict(color="#111111"),
                 showlegend=False
@@ -2102,57 +1251,61 @@ with tab8:
         
         with col2:
             # Calculate AI impact metrics
-            ai_accuracy = simulate_recommendation_accuracy(missing_pct)
-            ai_confidence = simulate_ai_confidence_degradation(100 - missing_pct)
+            ai_accuracy = max(45, 92 - missing_pct * 0.6)
+            ai_confidence = max(20, 95 - missing_pct * 1.2)
             
-            st.subheader("AI Impact Metrics")
-            st.metric("Recommendation Accuracy", f"{ai_accuracy:.0f}%", 
-                     delta=f"{ai_accuracy-92:.0f}% vs complete data")
-            st.metric("AI Confidence", f"{ai_confidence:.0f}%",
-                     delta=f"{ai_confidence-95:.0f}% vs optimal")
+            st.subheader("AI Påvirkning")
+            st.metric("Anbefaling-nøyaktighet", f"{ai_accuracy:.0f}%", 
+                     delta=f"{ai_accuracy-92:.0f}% vs komplette data")
+            st.metric("AI Tillit", f"{ai_confidence:.0f}%",
+                     delta=f"{ai_confidence-95:.0f}% vs optimalt")
             
             # Calculate ranking changes
-            complete_ranking = complete_data.rank(ascending=False, method='min')
-            incomplete_ranking = incomplete_data.rank(ascending=False, method='min')
-            
-            # Align rankings for comparison
-            common_parties = set(complete_ranking.index) & set(incomplete_ranking.index)
-            if common_parties:
-                ranking_changes = []
-                for party in common_parties:
-                    change = abs(complete_ranking[party] - incomplete_ranking[party])
-                    ranking_changes.append(change)
+            if len(incomplete_data) > 0:
+                complete_ranking = complete_data.rank(ascending=False, method='min')
+                incomplete_ranking = incomplete_data.rank(ascending=False, method='min')
                 
-                avg_rank_change = np.mean(ranking_changes)
-                st.metric("Avg. Rank Change", f"{avg_rank_change:.1f} positions")
+                # Find common parties for comparison
+                common_parties = set(complete_ranking.index) & set(incomplete_ranking.index)
+                if common_parties:
+                    ranking_changes = []
+                    for party in common_parties:
+                        change = abs(complete_ranking[party] - incomplete_ranking[party])
+                        ranking_changes.append(change)
+                    
+                    avg_rank_change = np.mean(ranking_changes)
+                    st.metric("Gj.snitt rangeringsendring", f"{avg_rank_change:.1f} plasser")
             
-            # Completeness status
+            # Data completeness status
             if missing_pct < 5:
-                st.success("🟢 Excellent completeness")
+                st.success("🟢 Utmerket kompletthet")
             elif missing_pct < 15:
-                st.warning("🟡 Acceptable completeness")
+                st.warning("🟡 Akseptabel kompletthet") 
             else:
-                st.error("🔴 Poor completeness - AI unreliable")
+                st.error("🔴 Lav kompletthet - AI upålitelig")
         
-        # Missing data patterns
-        st.subheader("📊 Missing Data Patterns")
+        # Missing data pattern analysis
+        st.subheader("Typer manglende data")
         
-        # Simulate different missing data patterns
-        patterns = ["Random", "Systematic (by category)", "Biased (against certain parties)"]
-        selected_pattern = st.selectbox("Type of missing data:", patterns)
+        patterns = ["Tilfeldig", "Systematisk (etter kategori)", "Skjevt (mot spesifikke partier)"]
+        selected_pattern = st.selectbox("Type manglende data:", patterns)
         
-        if selected_pattern == "Random":
-            st.info("💡 **Random missing**: Least harmful - AI can often compensate")
-        elif selected_pattern == "Systematic (by category)":
-            st.warning("⚠️ **Systematic missing**: More harmful - creates knowledge gaps")
+        if selected_pattern == "Tilfeldig":
+            st.info("💡 **Tilfeldig manglende**: Minst skadelig - AI kan ofte kompensere")
+        elif selected_pattern == "Systematisk (etter kategori)":
+            st.warning("⚠️ **Systematisk manglende**: Mer skadelig - skaper kunnskapshull")
         else:
-            st.error("🚨 **Biased missing**: Most harmful - creates unfair AI recommendations")
+            st.error("🚨 **Skjevt manglende**: Mest skadelig - skaper urettferdige AI-anbefalinger")
     
-    elif quality_dim == "🔄 Consistency":
-        st.subheader("Consistency: Når AI får motstridende signaler")
+    elif quality_dim == "🔄 Konsistens":
+        st.subheader("Konsistens: Når AI får motstridende informasjon")
         
-        # Show inconsistency between data sources
-        st.write("Sammenlign hvordan inkonsistente data påvirker AI-beslutninger:")
+        create_explanation_card(
+            "Problemet med inkonsistente data",
+            "Når ulike kilder gir forskjellige svar på lignende spørsmål, blir AI-systemer forvirret. " +
+            "Dette kan føre til ustabile prediksjoner og lav tillit til systemet.",
+            "⚠️", "warning"
+        )
         
         col1, col2 = st.columns(2)
         
@@ -2165,7 +1318,7 @@ with tab8:
                 "NRK": nrk_sample,
                 "TV2": tv2_sample
             })
-            consistency_df["Difference"] = abs(consistency_df["NRK"] - consistency_df["TV2"])
+            consistency_df["Forskjell"] = abs(consistency_df["NRK"] - consistency_df["TV2"])
             
             fig_cons = go.Figure()
             
@@ -2177,10 +1330,10 @@ with tab8:
                 text=consistency_df.index,
                 textposition="top center",
                 marker=dict(
-                    size=consistency_df["Difference"] * 20 + 8,  # Size based on difference
-                    color=consistency_df["Difference"],
-                    colorscale=[[0, COLORS[1]], [0.5, COLORS[0]], [1, "#ff4444"]],
-                    colorbar=dict(title="Avvik mellom kilder")
+                    size=consistency_df["Forskjell"] * 15 + 8,
+                    color=consistency_df["Forskjell"],
+                    colorscale=[[0, COL_POS], [0.5, COL_NEU], [1, COL_NEG]],
+                    colorbar=dict(title="Inkonsistens")
                 ),
                 name="Partier"
             ))
@@ -2193,11 +1346,12 @@ with tab8:
                 y=[min_val, max_val],
                 mode='lines',
                 line=dict(dash='dash', color='gray'),
-                name="Perfekt konsistens"
+                name="Perfekt konsistens",
+                hoverinfo='skip'
             ))
             
             fig_cons.update_layout(
-                title="Konsistens mellom NRK og TV2 (større punkt = mer inkonsistent)",
+                title="Konsistens mellom NRK og TV2<br>(større punkt = mer inkonsistent)",
                 xaxis_title="NRK gjennomsnitt",
                 yaxis_title="TV2 gjennomsnitt",
                 plot_bgcolor=BG, paper_bgcolor=BG,
@@ -2208,44 +1362,51 @@ with tab8:
         
         with col2:
             # Consistency metrics and AI impact
-            avg_diff = consistency_df["Difference"].mean()
-            max_diff = consistency_df["Difference"].max()
+            avg_diff = consistency_df["Forskjell"].mean()
+            max_diff = consistency_df["Forskjell"].max()
             
-            st.subheader("Consistency Metrics")
-            st.metric("Avg. Source Disagreement", f"{avg_diff:.2f} points")
-            st.metric("Max Source Disagreement", f"{max_diff:.2f} points")
+            st.subheader("Konsistens-mål")
+            st.metric("Gj.snitt kilde-uenighet", f"{avg_diff:.2f} poeng")
+            st.metric("Maks kilde-uenighet", f"{max_diff:.2f} poeng")
             
             # AI impact from inconsistency
             consistency_score = max(0, 100 - avg_diff * 30)
-            ai_conf_consistency = simulate_ai_confidence_degradation(consistency_score)
+            ai_trust = max(20, 95 - avg_diff * 25)
             
-            st.metric("Consistency Score", f"{consistency_score:.0f}%")
-            st.metric("AI Confidence Impact", f"{ai_conf_consistency:.0f}%")
+            st.metric("Konsistens-score", f"{consistency_score:.0f}%")
+            st.metric("AI Tillit", f"{ai_trust:.0f}%")
             
             # Recommendations based on consistency
             if avg_diff < 0.3:
-                st.success("🟢 High consistency - AI can trust both sources")
+                st.success("🟢 Høy konsistens - AI kan stole på begge kilder")
             elif avg_diff < 0.7:
-                st.warning("🟡 Moderate inconsistency - AI needs validation")
+                st.warning("🟡 Moderat inkonsistens - AI trenger validering")
             else:
-                st.error("🔴 High inconsistency - AI results unreliable")
+                st.error("🔴 Høy inkonsistens - AI-resultater upålitelige")
         
-        # Inconsistency resolution strategies
-        st.subheader("🔧 AI Strategies for Handling Inconsistency")
-        strategy = st.selectbox("AI resolution strategy:", 
-                               ["Source weighting", "Confidence intervals", "Ensemble methods", "Manual review"])
+        # Solution strategies
+        st.subheader("🔧 Løsningsstrategier for inkonsistente data")
+        strategy = st.selectbox("AI-strategi for å håndtere inkonsistens:", 
+                               ["Kilde-vekting", "Usikkerhetsintervaller", "Ensemble-metoder", "Manuell gjennomgang"])
         
-        if strategy == "Source weighting":
-            st.info("💡 Weight sources by reliability - more trustworthy sources get higher weight")
-        elif strategy == "Confidence intervals":
-            st.info("💡 Provide uncertainty ranges instead of point estimates")
-        elif strategy == "Ensemble methods":
-            st.info("💡 Use multiple AI models and combine their predictions")
+        if strategy == "Kilde-vekting":
+            st.info("💡 **Kilde-vekting**: Gi mer pålitelige kilder høyere vekt i AI-beslutninger")
+        elif strategy == "Usikkerhetsintervaller":
+            st.info("💡 **Usikkerhetsintervaller**: Gi usikkerhetsspenn i stedet for eksakte prediksjoner")
+        elif strategy == "Ensemble-metoder":
+            st.info("💡 **Ensemble-metoder**: Bruk flere AI-modeller og kombiner deres prediksjoner")
         else:
-            st.info("💡 Flag inconsistent cases for human expert review")
+            st.info("💡 **Manuell gjennomgang**: Flagg inkonsistente tilfeller for ekspert-vurdering")
     
-    elif quality_dim == "⏰ Timeliness":
-        st.subheader("Timeliness: AI-prestasjon med utdaterte data")
+    elif quality_dim == "⏰ Aktualitet":
+        st.subheader("Aktualitet: AI-ytelse med utdaterte data")
+        
+        create_explanation_card(
+            "Problemet med utdaterte data",
+            "AI-modeller som er trent på gamle data kan gi anbefalinger som ikke reflekterer " +
+            "dagens situasjon. Spesielt i politikk endrer opinioner seg raskt.",
+            "⚠️", "warning"
+        )
         
         # Simulate data aging effect
         months_old = st.slider("Alder på data (måneder):", 0, 24, 6, 1)
@@ -2255,28 +1416,28 @@ with tab8:
         with col1:
             # Show relevance decay over time
             months = list(range(0, 25, 3))
-            fresh_relevance = [100 - (m * 2) for m in months]  # Gradual decay
-            stale_relevance = [100 - (m * 5) for m in months]  # Faster decay for sensitive topics
+            stable_relevance = [max(0, 100 - m * 1.5) for m in months]  # Gradual decay
+            dynamic_relevance = [max(0, 100 - m * 4) for m in months]   # Faster decay
             
             fig_time = go.Figure()
             fig_time.add_trace(go.Scatter(
-                x=months, y=fresh_relevance,
+                x=months, y=stable_relevance,
                 mode='lines+markers',
-                name='Stable topics (økonomi)',
-                line=dict(color=COLORS[2], width=3),
+                name='Stabile tema (økonomi)',
+                line=dict(color=COL_POS, width=3),
                 marker=dict(size=8)
             ))
             fig_time.add_trace(go.Scatter(
-                x=months, y=stale_relevance,
+                x=months, y=dynamic_relevance,
                 mode='lines+markers',
-                name='Dynamic topics (teknologi)',
-                line=dict(color=COLORS[0], width=3),
+                name='Dynamiske tema (teknologi)',
+                line=dict(color=COL_NEG, width=3),
                 marker=dict(size=8)
             ))
             
             # Add vertical line for current data age
             fig_time.add_vline(x=months_old, line_dash="dash", line_color="red", 
-                              annotation_text=f"Din data: {months_old} mnd")
+                              annotation_text=f"Dine data: {months_old} mnd")
             
             fig_time.update_layout(
                 title="Datarelevans over tid",
@@ -2290,48 +1451,40 @@ with tab8:
         
         with col2:
             # Calculate current relevance and AI impact
-            stable_relevance = max(0, 100 - months_old * 2)
-            dynamic_relevance = max(0, 100 - months_old * 5)
+            stable_relevance = max(0, 100 - months_old * 1.5)
+            dynamic_relevance = max(0, 100 - months_old * 4)
             avg_relevance = (stable_relevance + dynamic_relevance) / 2
             
-            st.subheader("Timeliness Impact")
-            st.metric("Stable Topics Relevance", f"{stable_relevance:.0f}%")
-            st.metric("Dynamic Topics Relevance", f"{dynamic_relevance:.0f}%")
-            st.metric("Overall Data Relevance", f"{avg_relevance:.0f}%")
+            st.subheader("Aktualitet-påvirkning")
+            st.metric("Stabile tema-relevans", f"{stable_relevance:.0f}%")
+            st.metric("Dynamiske tema-relevans", f"{dynamic_relevance:.0f}%")
+            st.metric("Samlet data-relevans", f"{avg_relevance:.0f}%")
             
-            ai_performance = simulate_ai_confidence_degradation(avg_relevance)
-            st.metric("AI Performance", f"{ai_performance:.0f}%", 
-                     delta=f"{ai_performance-95:.0f}% vs fresh data")
+            ai_performance = max(20, 95 - (100 - avg_relevance) * 0.8)
+            st.metric("AI Ytelse", f"{ai_performance:.0f}%", 
+                     delta=f"{ai_performance-95:.0f}% vs ferske data")
             
             # Timeliness recommendations
             if months_old < 3:
-                st.success("🟢 Fresh data - AI performs optimally")
+                st.success("🟢 Ferske data - AI yter optimalt")
             elif months_old < 12:
-                st.warning("🟡 Aging data - Consider updates for dynamic topics")
+                st.warning("🟡 Aldrende data - vurder oppdatering")
             else:
-                st.error("🔴 Stale data - AI recommendations may be outdated")
-        
-        # Data refresh strategy
-        st.subheader("📅 Data Refresh Strategy")
-        topic_types = ["Political opinions", "Economic preferences", "Social values", "Technology adoption"]
-        refresh_intervals = [1, 6, 12, 3]  # months
-        
-        refresh_df = pd.DataFrame({
-            "Topic": topic_types,
-            "Recommended Refresh (months)": refresh_intervals,
-            "Current Age (months)": [months_old] * 4,
-            "Status": ["🔴 Overdue" if months_old > interval else "🟢 Current" 
-                      for interval in refresh_intervals]
-        })
-        
-        st.dataframe(refresh_df, use_container_width=True)
+                st.error("🔴 Gamle data - AI-anbefalinger kan være utdaterte")
     
-    elif quality_dim == "✅ Validity":
-        st.subheader("Validity: AI robusthet mot ugyldige data")
+    elif quality_dim == "✅ Validitet":
+        st.subheader("Validitet: AI-robusthet mot ugyldige data")
+        
+        create_explanation_card(
+            "Problemet med ugyldige data",
+            "Data med feil format, impossible verdier eller logiske motsigelser kan få AI-systemer " +
+            "til å lære feilaktige mønstre eller krasje helt.",
+            "⚠️", "warning"
+        )
         
         # Simulate different types of validity issues
         validity_issue = st.selectbox("Type validitetsproblem:", 
-                                    ["Format errors", "Out-of-range values", "Logical inconsistencies", "Encoding issues"])
+                                    ["Formatfeil", "Verdier utenfor rekkevidde", "Logiske motsigelser", "Kodingsproblemer"])
         
         error_rate = st.slider("Feilrate (%):", 0, 25, 5, 1)
         
@@ -2340,62 +1493,64 @@ with tab8:
         with col1:
             st.write(f"**Problem: {validity_issue}**")
             
-            if validity_issue == "Format errors":
+            if validity_issue == "Formatfeil":
                 st.code("""
-Valid: [-2, -1, 0, 1, 2]
-Invalid: ["strongly disagree", "", "N/A", 999]
-                """)
+Gyldig: [-2, -1, 0, 1, 2]
+Ugyldig: ["sterkt uenig", "", "N/A", 999]
+                """, language="text")
                 
-            elif validity_issue == "Out-of-range values":
+            elif validity_issue == "Verdier utenfor rekkevidde":
                 st.code("""
-Valid range: -2 to +2
-Invalid values: [-5, 7, 15, -10]
-                """)
+Gyldig rekkevidde: -2 til +2
+Ugyldige verdier: [-5, 7, 15, -10]
+                """, language="text")
                 
-            elif validity_issue == "Logical inconsistencies":
+            elif validity_issue == "Logiske motsigelser":
                 st.code("""
-Q1: "Increase taxes" -> +2 (strongly agree)
-Q2: "Lower taxes" -> +2 (strongly agree)
-[Logical contradiction!]
-                """)
+Spm1: "Øk skatter" -> +2 (sterkt enig)
+Spm2: "Senk skatter" -> +2 (sterkt enig)
+[Logisk motsigelse!]
+                """, language="text")
                 
-            else:  # Encoding issues
+            else:  # Kodingsproblemer
                 st.code("""
-Expected: UTF-8 text
-Actual: "SÃ¸ppel data med feil encoding"
-Should be: "Søppel data med feil encoding"
-                """)
+Forventet: UTF-8 tekst
+Faktisk: "Feil kÃ¸ding av norske tegn"
+Skulle være: "Feil koding av norske tegn"
+                """, language="text")
             
             # Show data distribution with errors
             valid_data = np.random.choice([-2, -1, 0, 1, 2], size=100-error_rate)
-            if validity_issue == "Out-of-range values":
+            if validity_issue == "Verdier utenfor rekkevidde":
                 invalid_data = np.random.choice([5, 7, -5, 10], size=error_rate)
-            else:
-                invalid_data = np.full(error_rate, np.nan)
-            
-            all_data = np.concatenate([valid_data, invalid_data]) if error_rate > 0 else valid_data
-            
-            fig_val = go.Figure()
-            
-            # Valid data
-            valid_counts = np.bincount(valid_data + 2, minlength=5)
-            fig_val.add_trace(go.Bar(
-                x=[-2, -1, 0, 1, 2], y=valid_counts,
-                name="Valid data", marker_color=COLORS[1]
-            ))
-            
-            # Invalid data
-            if error_rate > 0 and validity_issue == "Out-of-range values":
-                invalid_counts = np.bincount(invalid_data)
-                invalid_values = np.arange(len(invalid_counts))
+                all_data = np.concatenate([valid_data, invalid_data])
+                
+                fig_val = go.Figure()
+                
+                # Valid data
+                valid_counts = np.bincount(valid_data + 2, minlength=5)
                 fig_val.add_trace(go.Bar(
-                    x=invalid_values, y=invalid_counts,
-                    name="Invalid data", marker_color=COLORS[0]
+                    x=[-2, -1, 0, 1, 2], y=valid_counts,
+                    name="Gyldige data", marker_color=COL_POS
+                ))
+                
+                # Invalid data  
+                unique_invalid, invalid_counts = np.unique(invalid_data, return_counts=True)
+                fig_val.add_trace(go.Bar(
+                    x=unique_invalid, y=invalid_counts,
+                    name="Ugyldige data", marker_color=COL_NEG
+                ))
+            else:
+                fig_val = go.Figure()
+                valid_counts = np.bincount(valid_data + 2, minlength=5)
+                fig_val.add_trace(go.Bar(
+                    x=[-2, -1, 0, 1, 2], y=valid_counts,
+                    name="Gyldige data", marker_color=COL_POS
                 ))
             
             fig_val.update_layout(
-                title=f"Data distribution med {error_rate}% feil",
-                xaxis_title="Values", yaxis_title="Count",
+                title=f"Datafordeling med {error_rate}% feil",
+                xaxis_title="Verdier", yaxis_title="Antall",
                 plot_bgcolor=BG, paper_bgcolor=BG,
                 font=dict(color="#111111")
             )
@@ -2405,43 +1560,48 @@ Should be: "Søppel data med feil encoding"
         with col2:
             # AI impact of validity issues
             validity_score = max(0, 100 - error_rate * 4)
-            ai_robustness = simulate_ai_confidence_degradation(validity_score)
+            ai_robustness = max(20, 95 - error_rate * 3)
             
-            st.subheader("Validity Impact")
-            st.metric("Data Validity Score", f"{validity_score:.0f}%")
-            st.metric("AI Robustness", f"{ai_robustness:.0f}%", 
-                     delta=f"{ai_robustness-95:.0f}% vs clean data")
+            st.subheader("Validitet-påvirkning")
+            st.metric("Data-validitetsscore", f"{validity_score:.0f}%")
+            st.metric("AI Robusthet", f"{ai_robustness:.0f}%", 
+                     delta=f"{ai_robustness-95:.0f}% vs rene data")
             
             # Error handling strategies
-            st.subheader("🛠️ Error Handling")
+            st.subheader("🛠️ Feilhåndtering")
             if error_rate < 2:
-                st.success("🟢 Minimal errors - AI handles gracefully")
-                st.info("Strategy: Automatic outlier detection")
+                st.success("🟢 Minimale feil - AI håndterer elegant")
+                st.info("Strategi: Automatisk outlier-deteksjon")
             elif error_rate < 10:
-                st.warning("🟡 Moderate errors - Requires preprocessing")
-                st.info("Strategy: Data cleaning + validation rules")
+                st.warning("🟡 Moderate feil - krever forbehandling")
+                st.info("Strategi: Data-rensing + valideringsregler")
             else:
-                st.error("🔴 High error rate - AI results unreliable")
-                st.info("Strategy: Manual data audit required")
+                st.error("🔴 Høy feilrate - AI-resultater upålitelige")
+                st.info("Strategi: Manuell data-revisjon nødvendig")
             
             # Show AI error recovery capability
-            recovery_methods = ["Skip invalid records", "Impute missing values", 
-                              "Flag for manual review", "Use ensemble methods"]
-            selected_recovery = st.selectbox("AI Recovery Method:", recovery_methods)
+            recovery_methods = ["Hopp over ugyldige poster", "Fyll inn manglende verdier", 
+                              "Flagg for manuell gjennomgang", "Bruk ensemble-metoder"]
+            selected_recovery = st.selectbox("AI Gjenopprettingsmetode:", recovery_methods)
             
-            if selected_recovery == "Skip invalid records":
-                recovery_effectiveness = max(60, 100 - error_rate * 2)
-            elif selected_recovery == "Impute missing values":
-                recovery_effectiveness = max(70, 100 - error_rate * 1.5)
-            elif selected_recovery == "Flag for manual review":
-                recovery_effectiveness = max(80, 100 - error_rate * 1)
-            else:
-                recovery_effectiveness = max(75, 100 - error_rate * 1.2)
+            recovery_effectiveness = {
+                "Hopp over ugyldige poster": max(60, 100 - error_rate * 2),
+                "Fyll inn manglende verdier": max(70, 100 - error_rate * 1.5),
+                "Flagg for manuell gjennomgang": max(80, 100 - error_rate * 1),
+                "Bruk ensemble-metoder": max(75, 100 - error_rate * 1.2)
+            }
             
-            st.metric("Recovery Effectiveness", f"{recovery_effectiveness:.0f}%")
+            st.metric("Gjenopprettings-effektivitet", f"{recovery_effectiveness[selected_recovery]:.0f}%")
     
-    elif quality_dim == "🎭 Uniqueness":
-        st.subheader("Uniqueness: Når AI lærer feil fra duplikater")
+    else:  # Unikalitet
+        st.subheader("Unikalitet: Når AI lærer feil fra duplikater")
+        
+        create_explanation_card(
+            "Problemet med duplikater",
+            "Duplikate data får AI til å tro at noen ting er viktigere enn de egentlig er. " +
+            "Dette kan skape kunstig skjevhet og overvekting av spesifikke temaer.",
+            "⚠️", "warning"
+        )
         
         # Interactive duplicate demonstration
         duplicate_rate = st.slider("Duplikatrate (%):", 0, 40, 15, 5)
@@ -2469,13 +1629,13 @@ Should be: "Søppel data med feil encoding"
                 name='Original (balansert)',
                 x=categories,
                 y=original_influence,
-                marker_color=COLORS[1]
+                marker_color=COL_POS
             ))
             fig_uniq.add_trace(go.Bar(
                 name=f'Med {duplicate_rate}% duplikater',
                 x=categories,
                 y=skewed_influence,
-                marker_color=COLORS[0]
+                marker_color=COL_NEG
             ))
             
             fig_uniq.update_layout(
@@ -2494,435 +1654,253 @@ Should be: "Søppel data med feil encoding"
             uniqueness_score = max(0, 100 - duplicate_rate * 2.5)
             ai_bias = 100 - uniqueness_score
             
-            st.subheader("Uniqueness Impact")
-            st.metric("Data Uniqueness", f"{uniqueness_score:.0f}%")
-            st.metric("AI Bias Level", f"{ai_bias:.0f}%", 
-                     delta=f"+{ai_bias:.0f}% vs balanced data")
+            st.subheader("Unikalitet-påvirkning")
+            st.metric("Data-unikalitet", f"{uniqueness_score:.0f}%")
+            st.metric("AI Skjevhet", f"{ai_bias:.0f}%", 
+                     delta=f"+{ai_bias:.0f}% vs balanserte data")
             
             # Show overrepresentation
             overrep = skewed_influence[0] / original_influence[0]
-            st.metric(f"{duplicate_category} Overrepresentation", f"{overrep:.1f}x")
+            st.metric(f"{duplicate_category} Overrepresentasjon", f"{overrep:.1f}x")
             
             # Uniqueness status
             if duplicate_rate < 5:
-                st.success("🟢 High uniqueness - Minimal AI bias")
+                st.success("🟢 Høy unikalitet - Minimal AI-skjevhet")
             elif duplicate_rate < 15:
-                st.warning("🟡 Moderate duplicates - Some AI bias")
+                st.warning("🟡 Moderate duplikater - Noe AI-skjevhet")
             else:
-                st.error("🔴 High duplication - Significant AI bias")
+                st.error("🔴 Høy duplisering - Betydelig AI-skjevhet")
         
         # Duplicate detection strategies
-        st.subheader("🔍 Duplicate Detection Methods")
+        st.subheader("🔍 Duplikat-deteksjonsmetoder")
         
         detection_methods = {
-            "Exact matching": "Find identical questions word-for-word",
-            "Semantic similarity": "Find questions with similar meaning",
-            "Statistical correlation": "Find questions with highly correlated responses",
-            "Manual review": "Human expert identifies conceptual duplicates"
+            "Eksakt matching": "Finn identiske spørsmål ord-for-ord",
+            "Semantisk likhet": "Finn spørsmål med lignende betydning",  
+            "Statistisk korrelasjon": "Finn spørsmål med høyt korrelerte svar",
+            "Manuell gjennomgang": "Ekspert identifiserer konseptuelle duplikater"
         }
         
         for method, description in detection_methods.items():
             with st.expander(f"📋 {method}"):
                 st.write(description)
                 
-                if method == "Exact matching":
+                if method == "Eksakt matching":
                     st.code("""
-Example duplicates:
-1. "Bør Norge øke skatten?"
-2. "Bør Norge øke skatten?"
-[Identical - Easy to detect]
-                    """)
-                elif method == "Semantic similarity":
+Eksempel duplikater:
+1. "Bør Norge øke skattene?"
+2. "Bør Norge øke skattene?" 
+[Identiske - Lett å oppdage]
+                    """, language="text")
+                elif method == "Semantisk likhet":
                     st.code("""
-Example duplicates:
+Eksempel duplikater:
 1. "Bør Norge øke skatten for de rike?"
 2. "Synes du Norge bør ha høyere skatt på høye inntekter?"
-[Similar meaning - Harder to detect]
-                    """)
-                elif method == "Statistical correlation":
+[Lignende mening - Vanskeligere å oppdage]
+                    """, language="text")
+                elif method == "Statistisk korrelasjon":
                     st.code("""
-If responses to Q1 and Q2 correlate > 0.95:
-Likely measuring the same thing
-                    """)
+Hvis svar på Spm1 og Smp2 korrelerer > 0.95:
+Sannsynligvis måler det samme
+                    """, language="text")
                 else:
                     st.code("""
-Expert review needed for:
-- Conceptual overlaps
-- Different framings of same issue
-- Subtle semantic differences
-                    """)
-    
-    elif quality_dim == "🔬 Advanced Analysis":
-        st.subheader("Advanced Data Quality Analysis")
-        
-        analysis_type = st.selectbox("Velg analyse:", 
-                                   ["Multi-dimensional Quality Assessment", 
-                                    "AI Performance Simulation",
-                                    "Data Quality ROI Calculator",
-                                    "Quality-Accuracy Trade-offs"])
-        
-        if analysis_type == "Multi-dimensional Quality Assessment":
-            st.subheader("📊 Komplett datakvalitetsprofil")
-            
-            # Allow user to adjust all dimensions
-            st.write("Juster hver datakvalitetsdimensjon:")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                accuracy = st.slider("Accuracy", 0, 100, 85, 5)
-                completeness = st.slider("Completeness", 0, 100, 92, 5)
-                consistency = st.slider("Consistency", 0, 100, 78, 5)
-            
-            with col2:
-                timeliness = st.slider("Timeliness", 0, 100, 88, 5)
-                validity = st.slider("Validity", 0, 100, 95, 5)
-                uniqueness = st.slider("Uniqueness", 0, 100, 90, 5)
-            
-            # Calculate overall scores
-            dimensions = ["Accuracy", "Completeness", "Consistency", "Timeliness", "Validity", "Uniqueness"]
-            scores = [accuracy, completeness, consistency, timeliness, validity, uniqueness]
-            
-            # Create comprehensive radar chart
-            fig_multi = go.Figure()
-            
-            fig_multi.add_trace(go.Scatterpolar(
-                r=scores,
-                theta=dimensions,
-                fill='toself',
-                name='Current Quality',
-                line_color=COLORS[0],
-                fillcolor=f'rgba(255, 140, 69, 0.3)'
-            ))
-            
-            # Add benchmark line
-            benchmark_scores = [90] * 6  # Target quality level
-            fig_multi.add_trace(go.Scatterpolar(
-                r=benchmark_scores,
-                theta=dimensions,
-                fill='toself',
-                name='Target Quality',
-                line_color='green',
-                fillcolor='rgba(0, 255, 0, 0.1)'
-            ))
-            
-            fig_multi.update_layout(
-                polar=dict(
-                    radialaxis=dict(
-                        visible=True,
-                        range=[0, 100]
-                    )),
-                title="Multi-dimensional Data Quality Assessment",
-                plot_bgcolor=BG,
-                paper_bgcolor=BG,
-                font=dict(color="#111111")
-            )
-            
-            st.plotly_chart(fig_multi, use_container_width=True)
-            
-            # Overall assessment
-            overall_score = np.mean(scores)
-            ai_readiness = simulate_ai_confidence_degradation(overall_score)
-            
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Overall Quality Score", f"{overall_score:.0f}%")
-            col2.metric("AI Readiness", f"{ai_readiness:.0f}%")
-            
-            # Identify weakest dimensions
-            weakest_dim = dimensions[np.argmin(scores)]
-            col3.metric("Weakest Dimension", weakest_dim, delta=f"{min(scores):.0f}%")
-            
-            # Recommendations
-            st.subheader("🎯 Improvement Recommendations")
-            for i, (dim, score) in enumerate(zip(dimensions, scores)):
-                if score < 85:
-                    if dim == "Accuracy":
-                        st.warning(f"⚠️ **{dim}**: Review question formulations for bias")
-                    elif dim == "Completeness":
-                        st.warning(f"⚠️ **{dim}**: Fill data gaps, especially in key categories")
-                    elif dim == "Consistency":
-                        st.warning(f"⚠️ **{dim}**: Reconcile differences between data sources")
-                    elif dim == "Timeliness":
-                        st.warning(f"⚠️ **{dim}**: Update outdated questions and responses")
-                    elif dim == "Validity":
-                        st.warning(f"⚠️ **{dim}**: Implement data validation rules")
-                    else:  # Uniqueness
-                        st.warning(f"⚠️ **{dim}**: Remove or merge duplicate questions")
-        
-        elif analysis_type == "AI Performance Simulation":
-            st.subheader("🎮 AI Performance Under Different Quality Scenarios")
-            
-            # Preset quality scenarios
-            scenarios = {
-                "Perfect Data": [100, 100, 100, 100, 100, 100],
-                "Good Data": [90, 95, 85, 90, 95, 90],
-                "Average Data": [75, 80, 70, 75, 85, 80],
-                "Poor Data": [60, 65, 55, 60, 70, 65],
-                "Critical Issues": [40, 50, 40, 45, 50, 45]
-            }
-            
-            scenario_results = []
-            for scenario_name, quality_scores in scenarios.items():
-                overall_quality = np.mean(quality_scores)
-                ai_confidence = simulate_ai_confidence_degradation(overall_quality)
-                ai_accuracy = simulate_recommendation_accuracy(100 - overall_quality)
-                
-                scenario_results.append({
-                    "Scenario": scenario_name,
-                    "Data Quality": f"{overall_quality:.0f}%",
-                    "AI Confidence": f"{ai_confidence:.0f}%",
-                    "Recommendation Accuracy": f"{ai_accuracy:.0f}%",
-                    "Business Impact": "🟢 Excellent" if overall_quality >= 90 else
-                                    "🟡 Good" if overall_quality >= 75 else
-                                    "🟠 Fair" if overall_quality >= 60 else "🔴 Poor"
-                })
-            
-            scenario_df = pd.DataFrame(scenario_results)
-            st.dataframe(scenario_df, use_container_width=True)
-            
-            # Visualize performance curves
-            quality_range = np.arange(40, 101, 5)
-            confidence_curve = [simulate_ai_confidence_degradation(q) for q in quality_range]
-            accuracy_curve = [simulate_recommendation_accuracy(100-q) for q in quality_range]
-            
-            fig_perf = go.Figure()
-            fig_perf.add_trace(go.Scatter(
-                x=quality_range, y=confidence_curve,
-                mode='lines+markers',
-                name='AI Confidence',
-                line=dict(color=COLORS[2], width=3)
-            ))
-            fig_perf.add_trace(go.Scatter(
-                x=quality_range, y=accuracy_curve,
-                mode='lines+markers',
-                name='Recommendation Accuracy',
-                line=dict(color=COLORS[0], width=3)
-            ))
-            
-            fig_perf.update_layout(
-                title="AI Performance vs Data Quality",
-                xaxis_title="Data Quality Score (%)",
-                yaxis_title="AI Performance (%)",
-                plot_bgcolor=BG, paper_bgcolor=BG,
-                font=dict(color="#111111")
-            )
-            
-            st.plotly_chart(fig_perf, use_container_width=True)
-        
-        elif analysis_type == "Data Quality ROI Calculator":
-            st.subheader("💰 Return on Investment for Data Quality Improvements")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.write("**Current Situation:**")
-                current_quality = st.slider("Current Data Quality", 40, 95, 70, 5, key="current_qual")
-                annual_decisions = st.number_input("AI Decisions per Year", 1000, 100000, 10000, 1000)
-                decision_value = st.number_input("Average Decision Value (NOK)", 100, 100000, 5000, 500)
-                
-                st.write("**Improvement Target:**")
-                target_quality = st.slider("Target Data Quality", current_quality, 100, 90, 5, key="target_qual")
-                improvement_cost = st.number_input("Improvement Cost (NOK)", 10000, 1000000, 200000, 10000)
-            
-            with col2:
-                # Calculate ROI
-                current_accuracy = simulate_recommendation_accuracy(100 - current_quality)
-                target_accuracy = simulate_recommendation_accuracy(100 - target_quality)
-                
-                accuracy_improvement = target_accuracy - current_accuracy
-                
-                # Calculate financial impact
-                total_annual_value = annual_decisions * decision_value
-                current_correct_decisions = total_annual_value * (current_accuracy / 100)
-                target_correct_decisions = total_annual_value * (target_accuracy / 100)
-                
-                annual_benefit = target_correct_decisions - current_correct_decisions
-                roi_percentage = ((annual_benefit - improvement_cost) / improvement_cost) * 100
-                payback_months = (improvement_cost / annual_benefit) * 12 if annual_benefit > 0 else float('inf')
-                
-                st.write("**ROI Analysis:**")
-                st.metric("Accuracy Improvement", f"+{accuracy_improvement:.1f}%")
-                st.metric("Annual Benefit", f"{annual_benefit:,.0f} NOK")
-                st.metric("ROI", f"{roi_percentage:.0f}%")
-                st.metric("Payback Period", f"{payback_months:.1f} months" if payback_months != float('inf') else "Never")
-                
-                # ROI recommendation
-                if roi_percentage > 200:
-                    st.success("🟢 Excellent ROI - Invest immediately!")
-                elif roi_percentage > 50:
-                    st.warning("🟡 Good ROI - Worth considering")
-                elif roi_percentage > 0:
-                    st.info("🔵 Positive ROI - Marginal benefit")
-                else:
-                    st.error("🔴 Negative ROI - Reconsider approach")
-            
-            # ROI breakdown chart
-            quality_levels = np.arange(current_quality, 101, 5)
-            roi_values = []
-            
-            for q in quality_levels:
-                acc = simulate_recommendation_accuracy(100 - q)
-                benefit = annual_decisions * decision_value * (acc / 100) - current_correct_decisions
-                roi = ((benefit - improvement_cost) / improvement_cost) * 100 if improvement_cost > 0 else 0
-                roi_values.append(roi)
-            
-            fig_roi = go.Figure()
-            fig_roi.add_trace(go.Scatter(
-                x=quality_levels, y=roi_values,
-                mode='lines+markers',
-                name='ROI',
-                line=dict(color=COLORS[1], width=3),
-                fill='tonexty'
-            ))
-            
-            fig_roi.add_hline(y=0, line_dash="dash", line_color="gray", annotation_text="Break-even")
-            fig_roi.add_vline(x=target_quality, line_dash="dash", line_color=COLORS[0], 
-                             annotation_text=f"Target: {target_quality}%")
-            
-            fig_roi.update_layout(
-                title="ROI vs Data Quality Level",
-                xaxis_title="Data Quality (%)",
-                yaxis_title="ROI (%)",
-                plot_bgcolor=BG, paper_bgcolor=BG,
-                font=dict(color="#111111")
-            )
-            
-            st.plotly_chart(fig_roi, use_container_width=True)
-        
-        else:  # Quality-Accuracy Trade-offs
-            st.subheader("⚖️ Quality vs Speed vs Cost Trade-offs")
-            
-            st.write("Explore how different quality approaches affect project outcomes:")
-            
-            approach = st.selectbox("Data Quality Approach:", 
-                                  ["Quick & Dirty", "Balanced", "High Quality", "Gold Standard"])
-            
-            approaches = {
-                "Quick & Dirty": {
-                    "quality": 60, "time_weeks": 2, "cost": 50000, 
-                    "description": "Minimal cleaning, basic validation"
-                },
-                "Balanced": {
-                    "quality": 80, "time_weeks": 6, "cost": 150000,
-                    "description": "Standard cleaning, automated validation"
-                },
-                "High Quality": {
-                    "quality": 95, "time_weeks": 12, "cost": 300000,
-                    "description": "Comprehensive cleaning, manual review"
-                },
-                "Gold Standard": {
-                    "quality": 99, "time_weeks": 20, "cost": 500000,
-                    "description": "Perfect data, multiple validation stages"
-                }
-            }
-            
-            selected = approaches[approach]
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.metric("Data Quality", f"{selected['quality']}%")
-                st.metric("Time to Deliver", f"{selected['time_weeks']} weeks")
-                
-            with col2:
-                st.metric("Total Cost", f"{selected['cost']:,} NOK")
-                ai_perf = simulate_ai_confidence_degradation(selected['quality'])
-                st.metric("AI Performance", f"{ai_perf:.0f}%")
-                
-            with col3:
-                # Calculate business impact
-                annual_value = 10000000  # 10M NOK annual AI decisions
-                quality_impact = selected['quality'] / 100
-                effective_value = annual_value * quality_impact
-                
-                st.metric("Effective Annual Value", f"{effective_value:,.0f} NOK")
-                value_per_week = effective_value / 52
-                opportunity_cost = value_per_week * selected['time_weeks']
-                st.metric("Opportunity Cost", f"{opportunity_cost:,.0f} NOK")
-            
-            st.info(f"**Approach**: {selected['description']}")
-            
-            # Compare all approaches
-            st.subheader("📊 Approach Comparison")
-            
-            comparison_data = []
-            for name, data in approaches.items():
-                ai_perf = simulate_ai_confidence_degradation(data['quality'])
-                annual_value = 10000000
-                effective_value = annual_value * (data['quality'] / 100)
-                
-                comparison_data.append({
-                    "Approach": name,
-                    "Quality": f"{data['quality']}%",
-                    "Time": f"{data['time_weeks']}w",
-                    "Cost": f"{data['cost']:,}",
-                    "AI Performance": f"{ai_perf:.0f}%",
-                    "Annual Value": f"{effective_value:,.0f}"
-                })
-            
-            comparison_df = pd.DataFrame(comparison_data)
-            st.dataframe(comparison_df, use_container_width=True)
-            
-            # Trade-off visualization
-            fig_tradeoff = go.Figure()
-            
-            qualities = [approaches[name]['quality'] for name in approaches.keys()]
-            times = [approaches[name]['time_weeks'] for name in approaches.keys()]
-            costs = [approaches[name]['cost'] for name in approaches.keys()]
-            names = list(approaches.keys())
-            
-            fig_tradeoff.add_trace(go.Scatter(
-                x=times, y=qualities,
-                mode='markers+text',
-                text=names,
-                textposition="top center",
-                marker=dict(
-                    size=[c/10000 for c in costs],  # Size proportional to cost
-                    color=costs,
-                    colorscale='Viridis',
-                    colorbar=dict(title="Cost (NOK)")
-                ),
-                name="Approaches"
-            ))
-            
-            fig_tradeoff.update_layout(
-                title="Quality vs Time Trade-offs (bubble size = cost)",
-                xaxis_title="Time to Deliver (weeks)",
-                yaxis_title="Data Quality (%)",
-                plot_bgcolor=BG, paper_bgcolor=BG,
-                font=dict(color="#111111")
-            )
-            
-            st.plotly_chart(fig_tradeoff, use_container_width=True)
-            
-            # Decision framework
-            st.subheader("🎯 Decision Framework")
-            
-            priority = st.selectbox("Project Priority:", 
-                                  ["Speed (Time to market)", "Quality (Long-term accuracy)", 
-                                   "Cost (Budget constraints)", "Risk (Minimize failures)"])
-            
-            if priority == "Speed (Time to market)":
-                st.success("✅ **Recommendation**: Quick & Dirty approach")
-                st.info("Accept lower quality for faster delivery. Plan for iterative improvements.")
-                
-            elif priority == "Quality (Long-term accuracy)":
-                st.success("✅ **Recommendation**: High Quality or Gold Standard")
-                st.info("Invest in quality upfront. Higher initial cost but better long-term ROI.")
-                
-            elif priority == "Cost (Budget constraints)":
-                st.success("✅ **Recommendation**: Balanced approach")
-                st.info("Best quality-to-cost ratio. Good compromise for most situations.")
-                
-            else:  # Risk
-                st.success("✅ **Recommendation**: Gold Standard approach")
-                st.info("Minimize risk of AI failures. Critical for high-stakes applications.")
+Ekspert-gjennomgang nødvendig for:
+- Konseptuelle overlapp
+- Ulike framing av samme tema  
+- Subtile semantiske forskjeller
+                    """, language="text")
 
+with tab7:
+    st.header("Metodikk og Transparens")
+    
+    create_explanation_card(
+        "Vårt transparens-prinsipp",
+        "All vår metodikk er åpen og kan granskes. Vi oppfordrer til kritisk vurdering av våre " +
+        "antakelser og metoder. Dette er ikke 'absolutte sannheter', men analytiske verktøy."
+    )
+    
+    # Expandable methodology sections
+    with st.expander("🎯 Hvordan beregner vi datakvalitet?", expanded=True):
+        st.markdown("""
+        ### De 6 dimensjonene av datakvalitet
+        
+        Vår app vurderer datakvalitet langs 6 vitenskapelig anerkjente dimensjoner:
+        
+        #### 1. 🎯 Nøyaktighet (Accuracy)
+        **Hva det måler:** Hvor godt dataene reflekterer virkeligheten  
+        **Beregning:** `100% - (Gj.snitt absolutt forskjell mellom NRK og TV2) / 4 * 100%`  
+        **Logikk:** Hvis to uavhengige kilder gir lignende resultater, øker tilliten til nøyaktighet
+        
+        #### 2. 📋 Kompletthet (Completeness)  
+        **Hva det måler:** Hvor mye av dataene som faktisk er tilgjengelig  
+        **Beregning:** `(Totale celler - Manglende celler) / Totale celler * 100%`  
+        **Logikk:** Manglende data reduserer AI-systemers læringsevne
+        
+        #### 3. 🔄 Konsistens (Consistency)
+        **Hva det måler:** Hvor stabile og ikke-motsigelsesfulle dataene er  
+        **Beregning:** `100% - (Gj.snitt standardavvik * 25)`  
+        **Logikk:** Høy variabilitet kan indikere inkonsistente målinger
+        
+        #### 4. ⏰ Aktualitet (Timeliness)
+        **Hva det måler:** Hvor oppdaterte dataene er  
+        **Beregning:** `100% - (Måneder siden innsamling * 2%)`  
+        **Antakelse:** Data antas 6 mnd gamle, 2% verdifall per måned
+        
+        #### 5. ✅ Validitet (Validity)
+        **Hva det måler:** Om dataene har korrekt format og gyldige verdier  
+        **Beregning:** `Antall verdier i range [-2,+2] / Totale verdier * 100%`  
+        **Logikk:** Valgomatskalaen har definerte grenser
+        
+        #### 6. 🎭 Unikalitet (Uniqueness)
+        **Hva det måler:** Grad av duplikater og overrepresentasjon  
+        **Beregning:** `min(100%, (Antall kategorier * 4) / Totale spørsmål * 100%)`  
+        **Antakelse:** ~4 spørsmål per kategori som optimal balanse
+        """)
+    
+    with st.expander("📊 Kvalitetsvurderingsskala"):
+        st.markdown("""
+        ### Hvordan tolke kvalitetsscorer?
+        
+        **Samlet kvalitetsscore = Gjennomsnitt av alle 6 dimensjoner**
+        
+        | Score | Vurdering | AI-egnethet | Anbefaling |
+        |-------|-----------|-------------|------------|
+        | 90-100% | 🟢 Utmerket | Klar for avanserte AI-analyser | Fortsett som normalt |
+        | 75-89% | 🟡 God | Brukbar for de fleste AI-applikasjoner | Vurder forbedringer |
+        | 60-74% | 🟠 Akseptabel | Krever forbedringer før AI-bruk | Datarengjøring anbefales |
+        | Under 60% | 🔴 Lav | Omfattende datarengjøring nødvendig | Ikke egnet for AI |
+        """)
+    
+    with st.expander("⚠️ Begrensninger og antakelser"):
+        st.markdown("""
+        ### Hva vi IKKE kan måle:
+        - **Faktisk nøyaktighet:** Vi har ingen "fasit" å sammenligne med
+        - **Skjulte bias:** Systematiske skjevheter kan være usynlige  
+        - **Temporal drift:** Hvordan holdninger endrer seg over tid
+        - **Kontekstuelle faktorer:** Politisk klima, mediedekning osv.
+        
+        ### Våre antakelser:
+        - NRK og TV2 er begge relativt pålitelige kilder
+        - 6 måneder gammel data (estimat for valgomatdata)  
+        - 4 spørsmål per kategori er optimalt
+        - Politisk volatilitet på 2% per måned
+        - Standardavvik reflekterer inkonsistens (kan også være legitim variasjon)
+        
+        ### Viktige forbehold:
+        - **Ikke absolutte sannheter:** Våre metoder er analytiske verktøy, ikke objektive målinger
+        - **Kontekst-avhengig:** Kvalitet avhenger av bruksområde og krav
+        - **Forenklede modeller:** Virkeligheten er mer kompleks enn våre algoritmer
+        """)
+    
+    with st.expander("🔬 Vitenskapelig grunnlag"):
+        st.markdown("""
+        ### Forskningsbasert metodikk
+        
+        Våre datakvalitetsdimensjoner er basert på etablert forskning:
+        
+        **Klassiske referanser:**
+        - Wang, R. Y., & Strong, D. M. (1996). "Beyond accuracy: What data quality means to data consumers"
+        - ISO/IEC 25012:2008 - Data Quality Model  
+        - Pipino, L. L., Lee, Y. W., & Wang, R. Y. (2002). "Data quality assessment"
+        
+        **AI og bias-forskning:**
+        - Mehrabi, N., et al. (2021). "A Survey on Bias and Fairness in Machine Learning"
+        - Barocas, S., Hardt, M., & Narayanan, A. (2019). "Fairness and Machine Learning"
+        
+        **Politisk opinion-forskning:**
+        - Krosnick, J. A. (1991). "Response strategies for coping with the cognitive demands of attitude measures"
+        - Tourangeau, R., et al. (2000). "The Psychology of Survey Response"
+        """)
+    
+    with st.expander("💻 Teknisk implementasjon"):
+        st.markdown("""
+        ### Hvordan appen fungerer
+        
+        **Databehandling:**
+        ```python
+        # Eksempel: Beregning av konsistens
+        nrk_std = nrk[parties].std().mean()
+        tv2_std = tv2[parties].std().mean() 
+        avg_std = (nrk_std + tv2_std) / 2
+        consistency = max(0, 100 - avg_std * 25)
+        ```
+        
+        **Visualisering:**
+        - Plotly for interaktive grafer
+        - Streamlit for brukergrensesnitt
+        - Pandas for datamanipulasjon
+        
+        **Ytelse:**
+        - Caching av datainnlasting (@st.cache_data)
+        - Begrenset til 50 punkter i scatter plots for responsivitet
+        - Lazy loading av tunge beregninger
+        """)
+    
+    with st.expander("🎯 Bruksanvisning for forskere"):
+        st.markdown("""
+        ### Hvordan bruke appen i forskning
+        
+        **Egnet for:**
+        - Eksplorativ dataanalyse av politiske holdninger
+        - Identifisering av kontroversielle politiske tema  
+        - Sammenligning av mediekilders politiske profiler
+        - Undervisning i datakvalitet og AI-bias
+        
+        **IKKE egnet for:**
+        - Predikering av valgresultater
+        - Kausal slutning om politiske årsaksforhold
+        - Generalisering til befolkningen som helhet
+        - Presise målinger av partiforskjeller
+        
+        **Best practices:**
+        1. Kombiner med andre datakilder
+        2. Vurder kontekstuelle faktorer
+        3. Rapporter metodiske begrensninger
+        4. Bruk som utgangspunkt for videre forskning
+        """)
+    
+    with st.expander("🤔 Filosofiske refleksjoner"):
+        st.markdown("""
+        ### Hva kan vi egentlig vite?
+        
+        **Epistemologiske spørsmål:**
+        - Kan vi objektivt måle "datakvalitet"?
+        - Reflekterer partiposisjoner "sanne" politiske standpunkter?
+        - Hvor mye påvirker spørsmålsformulering svarene?
+        
+        **Etiske betraktninger:**
+        - Risiko for å forsterke eksisterende bias
+        - Ansvar ved automatisering av politiske vurderinger
+        - Transparens vs. kompleksitet i AI-systemer
+        
+        **Pragmatiske kompromisser:**
+        - Perfekt objektivitet er umulig, men vi kan strebe etter transparens
+        - Forenklede modeller kan være nyttige selv om de ikke er komplette
+        - Kritisk tenkning er viktigere enn algoritmisk presisjon
+        """)
+
+# Footer with methodology
 st.divider()
-st.markdown("""
-**💡 Metodologiske notater:**
-- Polariseringsscore kombinerer politisk retning og uenighetsgrad
-- Korrelasjonsanalyse viser konsistens på tvers av mediekilder  
-- Selv om spørsmålene er forskjellige, avslører analysene systematiske mønstre i norsk politikk
-- Nye innsiktstabber fokuserer på å finne meningsfulle mønstre på tvers av ulike datasett
-""")
-st.caption("💡 Tips: Bruk faner for å utforske ulike analyser. Plotly-figurer kan lastes ned via kamera-ikonet.")
+create_explanation_card(
+    "Om metodikken", 
+    """
+    **Datakilder:** Partisvar på valgomatspørsmål fra NRK og TV2
+    
+    **Viktige begrensninger:** 
+    • Vi har kun partienes offisielle standpunkter, ikke velgernes svar
+    • NRK og TV2 har forskjellige spørsmål - kan ikke sammenlignes direkte
+    • Analyser viser politiske mønstre, ikke absolutte "sannheter"
+    
+    **Statistiske mål:**
+    • Gjennomsnitt viser om partiene lener mot støtte eller motstand
+    • Uenighet måles som standardavvik mellom partiers posisjoner
+    • Høyere uenighet = mer kontroversielt/splittende spørsmål
+    
+    **Åpen kildekode:** All kode og metodikk er tilgjengelig for granskning og forbedring.
+    """,
+    "📖"
+)
+
+st.caption("💡 Tips: Klikk på grafene for å utforske interaktivt. Bruk faner for å se ulike analyser.")
