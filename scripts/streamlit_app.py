@@ -418,7 +418,7 @@ with tab1:
             """, unsafe_allow_html=True)
         
         # Add explanation of what makes questions controversial
-        with st.expander("🤔 Hva gjør et spørsmål kontroversielt?"):
+        with st.expander("Hva gjør et spørsmål kontroversielt?"):
             st.write("""
             Et spørsmål blir kontroversielt når:
             - **Noen partier er sterkt for** (svarer +2)
@@ -1949,7 +1949,7 @@ with tab7:
         4. Bruk som utgangspunkt for videre forskning
         """)
     
-    with st.expander("🤔 Filosofiske refleksjoner"):
+    with st.expander(" Filosofiske refleksjoner"):
         st.markdown("""
         ### Hva kan vi egentlig vite?
         
