@@ -560,44 +560,127 @@ with tab2:
                 diff_source = "NRK" if nrk_avg_disagreement > tv2_avg_disagreement else "TV2"
                 st.info(f"{diff_source} har mer kontrovers")
     
-    else:  # Ranking comparison
+    else:  # Ranking comparison - FIXED VERSION
         st.subheader("🏆 Hvem rangeres høyest/lavest?")
         
-        nrk_sums = nrk_subset[parties].sum().sort_values(ascending=False)
-        tv2_sums = tv2_subset[parties].sum().sort_values(ascending=False)
-        
-        # Create ranking visualization
-        fig = go.Figure()
-        
-        fig.add_trace(go.Scatter(
-            x=list(range(1, len(parties)+1)),
-            y=[nrk_sums.index.get_loc(p) + 1 for p in nrk_sums.index],
-            mode='markers+lines+text',
-            name='NRK rangering',
-            text=nrk_sums.index,
-            textposition="middle right",
-            marker=dict(size=12, color=COL_NEG)
-        ))
-        
-        fig.add_trace(go.Scatter(
-            x=list(range(1, len(parties)+1)),
-            y=[tv2_sums.index.get_loc(p) + 1 for p in tv2_sums.index],
-            mode='markers+lines+text', 
-            name='TV2 rangering',
-            text=tv2_sums.index,
-            textposition="middle left",
-            marker=dict(size=12, color=COL_POS)
-        ))
-        
-        fig.update_layout(
-            title="Partirangering: NRK vs TV2",
-            xaxis_title="Rangering (1 = høyest)",
-            yaxis_title="",
-            yaxis=dict(autorange="reversed"),
-            plot_bgcolor=BG, paper_bgcolor=BG
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+        try:
+            nrk_sums = nrk_subset[parties].sum().sort_values(ascending=False)
+            tv2_sums = tv2_subset[parties].sum().sort_values(ascending=False)
+            
+            # Create ranking dataframe for easier handling
+            ranking_df = pd.DataFrame({
+                'Party': parties,
+                'NRK_Sum': [nrk_sums.get(p, 0) for p in parties],
+                'TV2_Sum': [tv2_sums.get(p, 0) for p in parties]
+            })
+            
+            # Calculate rankings
+            ranking_df['NRK_Rank'] = ranking_df['NRK_Sum'].rank(ascending=False, method='min')
+            ranking_df['TV2_Rank'] = ranking_df['TV2_Sum'].rank(ascending=False, method='min')
+            
+            # Sort by NRK ranking for consistent display
+            ranking_df = ranking_df.sort_values('NRK_Rank')
+            
+            # Create ranking visualization
+            fig = go.Figure()
+            
+            # NRK rankings
+            fig.add_trace(go.Scatter(
+                x=ranking_df['NRK_Rank'],
+                y=ranking_df['Party'],
+                mode='markers+lines',
+                name='NRK rangering',
+                marker=dict(size=12, color=COL_NEG),
+                line=dict(color=COL_NEG, width=2, dash='dot'),
+                hovertemplate="<b>%{y}</b><br>NRK rangering: #%{x}<br>Sum: %{customdata}<extra></extra>",
+                customdata=ranking_df['NRK_Sum'].round(1)
+            ))
+            
+            # TV2 rankings
+            fig.add_trace(go.Scatter(
+                x=ranking_df['TV2_Rank'],
+                y=ranking_df['Party'],
+                mode='markers+lines',
+                name='TV2 rangering',
+                marker=dict(size=12, color=COL_POS),
+                line=dict(color=COL_POS, width=2, dash='dot'),
+                hovertemplate="<b>%{y}</b><br>TV2 rangering: #%{x}<br>Sum: %{customdata}<extra></extra>",
+                customdata=ranking_df['TV2_Sum'].round(1)
+            ))
+            
+            fig.update_layout(
+                title="Partirangering: NRK vs TV2<br><sub>Lavere tall = bedre rangering</sub>",
+                xaxis_title="Rangering (1 = høyest)",
+                yaxis_title="",
+                plot_bgcolor=BG, 
+                paper_bgcolor=BG,
+                font=dict(color="#111111"),
+                height=600,
+                xaxis=dict(
+                    tickmode='linear',
+                    tick0=1,
+                    dtick=1,
+                    range=[0.5, len(parties) + 0.5]
+                )
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Show ranking table
+            st.subheader("📋 Detaljert rangering")
+            display_ranking = ranking_df[['Party', 'NRK_Rank', 'TV2_Rank', 'NRK_Sum', 'TV2_Sum']].copy()
+            display_ranking['Rank_Difference'] = (display_ranking['TV2_Rank'] - display_ranking['NRK_Rank']).astype(int)
+            display_ranking.columns = ['Parti', 'NRK Rang', 'TV2 Rang', 'NRK Sum', 'TV2 Sum', 'Forskjell']
+            
+            # Add status column
+            display_ranking['Status'] = display_ranking['Forskjell'].apply(
+                lambda x: "📈 Bedre i TV2" if x < -1 else 
+                         "📉 Bedre i NRK" if x > 1 else 
+                         "➡️ Likt"
+            )
+            
+            st.dataframe(
+                display_ranking[['Parti', 'NRK Rang', 'TV2 Rang', 'Forskjell', 'Status']], 
+                use_container_width=True,
+                hide_index=True
+            )
+            
+            # Summary statistics
+            avg_diff = abs(display_ranking['Forskjell']).mean()
+            max_diff = abs(display_ranking['Forskjell']).max()
+            
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Gjennomsnittlig forskjell", f"{avg_diff:.1f} plasser")
+            col2.metric("Største forskjell", f"{max_diff:.0f} plasser")
+            col3.metric("Partier med lik rangering", f"{sum(display_ranking['Forskjell'] == 0)}/{len(parties)}")
+            
+            # Interpretation
+            if avg_diff <= 1:
+                st.success("🟢 Kildene rangerer partiene meget likt!")
+            elif avg_diff <= 2:
+                st.warning("🟡 Moderate forskjeller i rangering")
+            else:
+                st.error("🔴 Store forskjeller i rangering mellom kildene")
+                
+        except Exception as e:
+            st.error(f"Feil i rangering-analyse: {str(e)}")
+            st.info("Prøv å endre antall spørsmål eller kontakt support hvis problemet vedvarer.")
+            
+            # Fallback: Simple bar chart comparison
+            st.subheader("Forenklet sammenligning")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**NRK - Topp partier**")
+                nrk_simple = nrk_subset[parties].sum().nlargest(5)
+                for i, (party, score) in enumerate(nrk_simple.items(), 1):
+                    st.write(f"{i}. {party}: {score:.1f}")
+            
+            with col2:
+                st.write("**TV2 - Topp partier**")
+                tv2_simple = tv2_subset[parties].sum().nlargest(5)
+                for i, (party, score) in enumerate(tv2_simple.items(), 1):
+                    st.write(f"{i}. {party}: {score:.1f}")
 
 with tab3:
     st.header("Temaoversikt fra TV2")
@@ -619,27 +702,29 @@ with tab3:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Create donut chart
-            fig_donut = px.pie(
+            # Create pie chart
+            fig_pie = px.pie(
                 values=category_counts.values,
                 names=category_counts.index,
-                hole=0.4,
                 title="Fordeling av politiske tema"
             )
             
-            fig_donut.update_traces(
-                textposition='inside',
+            fig_pie.update_traces(
+                textposition='outside',
                 textinfo='percent+label',
-                marker=dict(line=dict(color='white', width=2))
+                marker=dict(line=dict(color='white', width=2)),
+                pull=[0.05] * len(category_counts)  # Slight separation of slices
             )
             
-            fig_donut.update_layout(
+            fig_pie.update_layout(
                 plot_bgcolor=BG,
                 paper_bgcolor=BG,
-                font=dict(color="#111111")
+                font=dict(color="#111111"),
+                margin=dict(t=50, b=50, l=100, r=100),  # More margin for outside labels
+                showlegend=False  # Remove legend since labels are on chart
             )
             
-            st.plotly_chart(fig_donut, use_container_width=True)
+            st.plotly_chart(fig_pie, use_container_width=True)
         
         with col2:
             st.subheader("📈 Temastatistikk")
@@ -968,7 +1053,7 @@ with tab6:
                 name='Valgomatdata Score',
                 line_color=COL_POS,
                 fillcolor=f'rgba(151, 210, 236, 0.3)',
-                hovertemplate="<b>%{theta}</b><br>Score: %{r:.1f}%<br>Klikk for detaljer<extra></extra>"
+                hovertemplate="<b>%{theta}</b><br>Score: %{r:.1f}%<extra></extra>"
             ))
             
             fig_radar.update_layout(
@@ -979,26 +1064,28 @@ with tab6:
                         tickfont_size=10
                     )),
                 showlegend=False,
-                title="Datakvalitetsprofil for Valgomatdata<br><sub>Klikk på en dimensjon for å utforske</sub>",
+                title="Datakvalitetsprofil for Valgomatdata",
                 plot_bgcolor=BG,
                 paper_bgcolor=BG,
                 font=dict(color="#111111"),
                 height=400
             )
             
-            # Make chart clickable
-            selected_point = st.plotly_chart(fig_radar, use_container_width=True, 
-                                            on_select="rerun", selection_mode="points")
+            st.plotly_chart(fig_radar, use_container_width=True)
             
-            # Handle click interactions
-            if selected_point and "selection" in selected_point and selected_point["selection"]["points"]:
-                clicked_dimension_idx = selected_point["selection"]["points"][0]["pointIndex"]
-                clicked_dimension = dimensions[clicked_dimension_idx]
-                clicked_score = scores[clicked_dimension_idx]
+            # Add interactive dimension selector
+            st.subheader("🔍 Utforsk dimensjoner")
+            selected_dimension = st.selectbox(
+                "Klikk for å utforske en datakvalitetsdimensjon:",
+                options=dimensions,
+                help="Velg en dimensjon fra listen for å se detaljert informasjon"
+            )
+            
+            if selected_dimension:
+                clicked_score = quality_scores[selected_dimension]
+                st.success(f"🎯 **{selected_dimension}** valgt: {clicked_score:.0f}%")
                 
-                st.success(f"🎯 **{clicked_dimension}** valgt: {clicked_score:.0f}%")
-                
-                # Show detailed information about clicked dimension
+                # Show detailed information about selected dimension
                 dimension_details = {
                     "Nøyaktighet": {
                         "description": "Måler hvor godt dataene reflekterer virkeligheten",
@@ -1032,10 +1119,10 @@ with tab6:
                     }
                 }
                 
-                if clicked_dimension in dimension_details:
-                    details = dimension_details[clicked_dimension]
+                if selected_dimension in dimension_details:
+                    details = dimension_details[selected_dimension]
                     
-                    with st.expander(f"📋 Detaljer om {clicked_dimension}", expanded=True):
+                    with st.expander(f"📋 Detaljer om {selected_dimension}", expanded=True):
                         st.write(f"**Beskrivelse:** {details['description']}")
                         st.write(f"**Beregning:** {details['calculation']}")  
                         st.write(f"**Tolkning:** {details['interpretation']}")
@@ -1084,7 +1171,8 @@ with tab6:
             "Tips for interaksjon",
             "Klikk på en dimensjon i radar-diagrammet ovenfor for å se detaljert informasjon om " +
             "hvordan scoren beregnes og hva den betyr for AI-kvalitet. " +
-            "Velg andre dimensjoner fra dropdown-menyen for å utforske spesifikke problemer."
+            "Velg andre dimensjoner fra dropdown-menyen for å utforske spesifikke problemer.",
+
         )
     
     elif quality_dim == "🎯 Nøyaktighet":
