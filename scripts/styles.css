@@ -1,0 +1,326 @@
+/* styles.css - Streamlit Valgomat App Styling */
+
+/* Force light theme globally */
+.stApp {
+  background-color: #fcf6ee !important;
+  color: #111111 !important;
+}
+
+/* Main content area */
+.main .block-container {
+  background-color: #fcf6ee !important;
+  color: #111111 !important;
+  padding-top: 1rem;
+}
+
+/* Header and navigation */
+.stApp > header {
+  background-color: #fcf6ee !important;
+}
+
+.stApp > .main {
+  background-color: #fcf6ee !important;
+}
+
+div[data-testid="stAppViewContainer"] {
+  background-color: #fcf6ee !important;
+}
+
+div[data-testid="stHeader"] {
+  background-color: #fcf6ee !important;
+}
+
+div[data-testid="stToolbar"] {
+  background-color: #fcf6ee !important;
+}
+
+div[data-testid="stDecoration"] {
+  background-color: #fcf6ee !important;
+}
+
+/* Force all text to be dark */
+.stApp, .stApp * {
+  color: #111111 !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #111111 !important;
+}
+
+p, li, span, div, label {
+  color: #111111 !important;
+}
+
+.stMarkdown, .stMarkdown * {
+  color: #111111 !important;
+}
+
+/* Sidebar */
+.css-1d391kg, .css-1rs6os {
+  background-color: #f0e6d6 !important;
+  color: #111111 !important;
+}
+
+section[data-testid="stSidebar"] {
+  background-color: #f0e6d6 !important;
+}
+
+section[data-testid="stSidebar"] * {
+  color: #111111 !important;
+}
+
+/* Metrics */
+div[data-testid="metric-container"] {
+  background-color: white !important;
+  border: 1px solid #ddd !important;
+  color: #111111 !important;
+}
+
+div[data-testid="metric-container"] * {
+  color: #111111 !important;
+}
+
+/* Buttons */
+.stButton > button {
+  background-color: white !important;
+  color: #111111 !important;
+  border: 1px solid #ddd !important;
+}
+
+.stButton > button:hover {
+  background-color: #f0f0f0 !important;
+  color: #111111 !important;
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {
+  background-color: white !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+  background-color: #f0f0f0 !important;
+  color: #111111 !important;
+}
+
+.stTabs [aria-selected="true"] {
+  background-color: #97d2ec !important;
+  color: #111111 !important;
+}
+
+/* Fix dropdown menu backgrounds */
+.stSelectbox > div > div {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.stSelectbox [data-testid="stSelectbox"] {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.stSelectbox [data-baseweb="select"] {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.stSelectbox [data-baseweb="select"] > div {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.stSelectbox [data-baseweb="select"] span {
+  color: #111111 !important;
+}
+
+/* Dropdown options */
+.stSelectbox [data-baseweb="menu"] {
+  background-color: white !important;
+}
+
+.stSelectbox [data-baseweb="menu"] ul {
+  background-color: white !important;
+}
+
+.stSelectbox [data-baseweb="menu"] li {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.stSelectbox [data-baseweb="menu"] li:hover {
+  background-color: #f0e6d6 !important;
+  color: #111111 !important;
+}
+
+/* Additional selectbox styling */
+div[data-baseweb="select"] {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+div[data-baseweb="select"] > div {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+div[data-baseweb="popover"] {
+  background-color: white !important;
+}
+
+div[data-baseweb="popover"] ul {
+  background-color: white !important;
+}
+
+div[data-baseweb="popover"] li {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+div[data-baseweb="popover"] li:hover {
+  background-color: #f0e6d6 !important;
+  color: #111111 !important;
+}
+
+/* Radio buttons */
+.stRadio > div {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.stRadio label {
+  color: #111111 !important;
+}
+
+/* Sliders */
+.stSlider > div {
+  color: #111111 !important;
+}
+
+.stSlider label {
+  color: #111111 !important;
+}
+
+/* Text inputs */
+.stTextInput > div > div > input {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.stTextInput label {
+  color: #111111 !important;
+}
+
+/* Number inputs */
+.stNumberInput > div > div > input {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.stNumberInput label {
+  color: #111111 !important;
+}
+
+/* Dataframes */
+.stDataFrame {
+  background-color: white !important;
+}
+
+/* Expanders */
+.streamlit-expanderHeader {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+.streamlit-expanderContent {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+/* Success/warning/error messages */
+.stSuccess {
+  background-color: #d4edda !important;
+  color: #155724 !important;
+}
+
+.stWarning {
+  background-color: #fff3cd !important;
+  color: #856404 !important;
+}
+
+.stError {
+  background-color: #f8d7da !important;
+  color: #721c24 !important;
+}
+
+.stInfo {
+  background-color: #d1ecf1 !important;
+  color: #0c5460 !important;
+}
+
+/* Custom explanation cards */
+.explanation-card {
+  background: linear-gradient(135deg, #e8f4f8, #f0f8ff);
+  border-left: 4px solid #97d2ec;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 10px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.explanation-card h4 {
+  color: #111111 !important;
+  margin: 0 0 8px 0;
+}
+
+.explanation-card p {
+  color: #333333 !important;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Warning boxes */
+.warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-left: 4px solid #f39c12;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.critical-info {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-left: 4px solid #dc3545;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+/* Question cards */
+.question-card {
+  background: linear-gradient(135deg, #f0f8ff, #fafafa);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.question-card.supporting {
+  border-left: 4px solid #97d2ec;
+  background: linear-gradient(135deg, #e6f3ff, #f0f8ff);
+}
+
+.question-card.opposing {
+  border-left: 4px solid #ff8c45;
+  background: linear-gradient(135deg, #ffe6e6, #fff0f0);
+}
+
+.question-card.neutral {
+  border-left: 4px solid #ffd865;
+  background: linear-gradient(135deg, #f5f5f5, #fafafa);
+}
