@@ -105,7 +105,7 @@ def create_how_to_read_box(graph_type):
         st.markdown(f"""
         <div class="explanation-card">
             <details>
-                <summary><strong>🤔 Hvordan lese denne grafen?</strong></summary>
+                <summary><strong> Hvordan lese denne grafen?</strong></summary>
                 <p style="margin-top: 8px;">{explanations[graph_type]}</p>
             </details>
         </div>
@@ -120,9 +120,12 @@ def create_data_context_warning():
         <p>Tallene kommer fra hva partiene har svart på valgomatspørsmål:</p>
         <ul>
             <li><strong>+2</strong> = Partiet er sterkt enig i forslaget</li>
+            <li><strong>+1</strong> = Partiet er moderat enig</li>
             <li><strong>0</strong> = Partiet er nøytral eller usikker</li>
+            <li><strong>-1</strong> = Partiet er moderat uenig</li>
             <li><strong>-2</strong> = Partiet er sterkt uenig i forslaget</li>
         </ul>
+        <p><strong>📊 Viktig tolkning:</strong> Negative summer (som -60) betyr ikke at partiet er "negativt" - det betyr de er imot de spesifikke forslagene som ble testet. En sum på -60 over 30 spørsmål = gjennomsnitt -2.0 per spørsmål = konsekvent motstand mot forslagene.</p>
         <p>Vi har <em>ikke</em> data fra vanlige folk som har tatt valgomaten.</p>
     </div>
     """, unsafe_allow_html=True)
@@ -137,40 +140,78 @@ def create_tv2_only_explanation():
         "ℹ️"
     )
 
+def create_score_interpretation_box():
+    
+    st.markdown("""
+    <div class="explanation-card">
+        <h4>📊 Slik tolker du scorene</h4>
+        <p><strong>Summer vs. Gjennomsnitt:</strong></p>
+        <ul>
+            <li><strong>Sum -60 over 30 spørsmål</strong> = Gjennomsnitt -2.0 = Konsekvent imot forslagene</li>
+            <li><strong>Sum +40 over 20 spørsmål</strong> = Gjennomsnitt +2.0 = Konsekvent for forslagene</li>
+            <li><strong>Sum 0 over 25 spørsmål</strong> = Gjennomsnitt 0.0 = Nøytral/balansert</li>
+        </ul>
+        <p><strong>Negative tall betyr IKKE:</strong> Partiet er "negativt" eller "imot alt"<br>
+        <strong>Negative tall betyr:</strong> Partiet er imot de spesifikke forslagene som ble testet</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="explanation-card">
+        <h4>📊 Slik tolker du scorene</h4>
+        <p><strong>Summer vs. Gjennomsnitt:</strong></p>
+        <ul>
+            <li><strong>Sum -60 over 30 spørsmål</strong> = Gjennomsnitt -2.0 = Konsekvent imot forslagene</li>
+            <li><strong>Sum +40 over 20 spørsmål</strong> = Gjennomsnitt +2.0 = Konsekvent for forslagene</li>
+            <li><strong>Sum 0 over 25 spørsmål</strong> = Gjennomsnitt 0.0 = Nøytral/balansert</li>
+        </ul>
+        <p><strong>Negative tall betyr IKKE:</strong> Partiet er "negativt" eller "imot alt"<br>
+        <strong>Negative tall betyr:</strong> Partiet er imot de spesifikke forslagene som ble testet</p>
+    </div>
+    """, unsafe_allow_html=True)
+    """Explain why some analyses use only TV2 data"""
+    create_explanation_card(
+        "Hvorfor bare TV2-data?",
+        "Vektings- og scenario-analyser krever tematiske kategorier (økonomi, helse, osv.). " +
+        "TV2-data har denne informasjonen, mens NRK-data mangler kategorisering. " +
+        "Dette er ikke en svakhet, men reflekterer at ulike kilder strukturerer data forskjellig.",
+        "ℹ️"
+    )
+
 def friendly_translate_stats(mu, std):
     """Translate statistics to friendly language"""
     # Translate direction (mu)
     if abs(mu) < 0.2:
         direction = "Partiene er delte"
-        direction_emoji = "⚖️"
+        
     elif mu > 0.5:
         direction = "De fleste partier støtter dette"
-        direction_emoji = "👍"
+        
     elif mu > 0:
         direction = "Svakt flertall støtter"
-        direction_emoji = "📈"
+        
     elif mu < -0.5:
         direction = "De fleste partier er imot"
-        direction_emoji = "👎"
+        
     else:
         direction = "Svakt flertall er imot"
-        direction_emoji = "📉"
+       
     
     # Translate disagreement (std)
     if std < 0.5:
         agreement = "bred enighet"
-        agreement_emoji = "🤝"
+        
     elif std < 1.0:
         agreement = "noe uenighet"
-        agreement_emoji = "⚡"
+        
     elif std < 1.5:
         agreement = "mye uenighet"
-        agreement_emoji = "🔥"
+        
     else:
         agreement = "dyp splittelse"
-        agreement_emoji = "💥"
+        
     
-    return f"{direction_emoji} {direction} ({agreement_emoji} {agreement})"
+    return f" {direction} ( {agreement})"
 
 # Data loading and processing functions
 @st.cache_data
@@ -289,18 +330,187 @@ st.subheader("Utforsk hvordan norske partier posisjonerer seg politisk")
 # Data context warning at the top
 create_data_context_warning()
 
-# Navigation tabs with clearer names
+# Navigation tabs with clearer names - Metodikk first
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    "📖 Metodikk",
     "🎯 Hva splitter partiene?", 
     "📊 Sammenlign datakilder",
     "📋 Temaoversikt (TV2)",
     "⚖️ Vektingseffekter", 
     "📈 Scenario-analyse",
-    "🤖 AI & Datakvalitet",
-    "📖 Metodikk"
+    "🤖 AI & Datakvalitet"
 ])
 
 with tab1:
+    st.header("Metodikk og Transparens")
+    
+    create_explanation_card(
+        "Vårt transparens-prinsipp",
+        "All vår metodikk er åpen og kan granskes. Vi oppfordrer til kritisk vurdering av våre " +
+        "antakelser og metoder. Dette er ikke 'absolutte sannheter', men analytiske verktøy."
+    )
+    
+    # Expandable methodology sections
+    with st.expander("🎯 Hvordan beregner vi datakvalitet?", expanded=True):
+        st.markdown("""
+        ### De 6 dimensjonene av datakvalitet
+        
+        Vår app vurderer datakvalitet langs 6 vitenskapelig anerkjente dimensjoner:
+        
+        #### 1. 🎯 Nøyaktighet (Accuracy)
+        **Hva det måler:** Hvor godt dataene reflekterer virkeligheten  
+        **Beregning:** `100% - (Gj.snitt absolutt forskjell mellom NRK og TV2) / 4 * 100%`  
+        **Logikk:** Hvis to uavhengige kilder gir lignende resultater, øker tilliten til nøyaktighet
+        
+        #### 2. 📋 Kompletthet (Completeness)  
+        **Hva det måler:** Hvor mye av dataene som faktisk er tilgjengelig  
+        **Beregning:** `(Totale celler - Manglende celler) / Totale celler * 100%`  
+        **Logikk:** Manglende data reduserer AI-systemers læringsevne
+        
+        #### 3. 🔄 Konsistens (Consistency)
+        **Hva det måler:** Hvor stabile og ikke-motsigelsesfulle dataene er  
+        **Beregning:** `100% - (Gj.snitt standardavvik * 25)`  
+        **Logikk:** Høy variabilitet kan indikere inkonsistente målinger
+        
+        #### 4. ⏰ Aktualitet (Timeliness)
+        **Hva det måler:** Hvor oppdaterte dataene er  
+        **Beregning:** `100% - (Måneder siden innsamling * 2%)`  
+        **Antakelse:** Data antas 6 mnd gamle, 2% verdifall per måned
+        
+        #### 5. ✅ Validitet (Validity)
+        **Hva det måler:** Om dataene har korrekt format og gyldige verdier  
+        **Beregning:** `Antall verdier i range [-2,+2] / Totale verdier * 100%`  
+        **Logikk:** Valgomatskalaen har definerte grenser
+        
+        #### 6. 🎭 Unikalitet (Uniqueness)
+        **Hva det måler:** Grad av duplikater og overrepresentasjon  
+        **Beregning:** `min(100%, (Antall kategorier * 4) / Totale spørsmål * 100%)`  
+        **Antakelse:** ~4 spørsmål per kategori som optimal balanse
+        """)
+    
+    with st.expander("📊 Kvalitetsvurderingsskala"):
+        st.markdown("""
+        ### Hvordan tolke kvalitetsscorer?
+        
+        **Samlet kvalitetsscore = Gjennomsnitt av alle 6 dimensjoner**
+        
+        | Score | Vurdering | AI-egnethet | Anbefaling |
+        |-------|-----------|-------------|------------|
+        | 90-100% | 🟢 Utmerket | Klar for avanserte AI-analyser | Fortsett som normalt |
+        | 75-89% | 🟡 God | Brukbar for de fleste AI-applikasjoner | Vurder forbedringer |
+        | 60-74% | 🟠 Akseptabel | Krever forbedringer før AI-bruk | Datarengjøring anbefales |
+        | Under 60% | 🔴 Lav | Omfattende datarengjøring nødvendig | Ikke egnet for AI |
+        """)
+    
+    with st.expander("⚠️ Begrensninger og antakelser"):
+        st.markdown("""
+        ### Hva vi IKKE kan måle:
+        - **Faktisk nøyaktighet:** Vi har ingen "fasit" å sammenligne med
+        - **Skjulte bias:** Systematiske skjevheter kan være usynlige  
+        - **Temporal drift:** Hvordan holdninger endrer seg over tid
+        - **Kontekstuelle faktorer:** Politisk klima, mediedekning osv.
+        
+        ### Våre antakelser:
+        - NRK og TV2 er begge relativt pålitelige kilder
+        - 6 måneder gammel data (estimat for valgomatdata)  
+        - 4 spørsmål per kategori er optimalt
+        - Politisk volatilitet på 2% per måned
+        - Standardavvik reflekterer inkonsistens (kan også være legitim variasjon)
+        
+        ### Viktige forbehold:
+        - **Ikke absolutte sannheter:** Våre metoder er analytiske verktøy, ikke objektive målinger
+        - **Kontekst-avhengig:** Kvalitet avhenger av bruksområde og krav
+        - **Forenklede modeller:** Virkeligheten er mer kompleks enn våre algoritmer
+        """)
+    
+    with st.expander("🔬 Vitenskapelig grunnlag"):
+        st.markdown("""
+        ### Forskningsbasert metodikk
+        
+        Våre datakvalitetsdimensjoner er basert på etablert forskning:
+        
+        **Klassiske referanser:**
+        - Wang, R. Y., & Strong, D. M. (1996). "Beyond accuracy: What data quality means to data consumers"
+        - ISO/IEC 25012:2008 - Data Quality Model  
+        - Pipino, L. L., Lee, Y. W., & Wang, R. Y. (2002). "Data quality assessment"
+        
+        **AI og bias-forskning:**
+        - Mehrabi, N., et al. (2021). "A Survey on Bias and Fairness in Machine Learning"
+        - Barocas, S., Hardt, M., & Narayanan, A. (2019). "Fairness and Machine Learning"
+        
+        **Politisk opinion-forskning:**
+        - Krosnick, J. A. (1991). "Response strategies for coping with the cognitive demands of attitude measures"
+        - Tourangeau, R., et al. (2000). "The Psychology of Survey Response"
+        """)
+    
+    with st.expander("💻 Teknisk implementasjon"):
+        st.markdown("""
+        ### Hvordan appen fungerer
+        
+        **Databehandling:**
+        ```python
+        # Eksempel: Beregning av konsistens
+        nrk_std = nrk[parties].std().mean()
+        tv2_std = tv2[parties].std().mean() 
+        avg_std = (nrk_std + tv2_std) / 2
+        consistency = max(0, 100 - avg_std * 25)
+        ```
+        
+        **Visualisering:**
+        - Plotly for interaktive grafer
+        - Streamlit for brukergrensesnitt
+        - Pandas for datamanipulasjon
+        
+        **Ytelse:**
+        - Caching av datainnlasting (@st.cache_data)
+        - Begrenset til 50 punkter i scatter plots for responsivitet
+        - Lazy loading av tunge beregninger
+        """)
+    
+    with st.expander("🎯 Bruksanvisning for forskere"):
+        st.markdown("""
+        ### Hvordan bruke appen i forskning
+        
+        **Egnet for:**
+        - Eksplorativ dataanalyse av politiske holdninger
+        - Identifisering av kontroversielle politiske tema  
+        - Sammenligning av mediekilders politiske profiler
+        - Undervisning i datakvalitet og AI-bias
+        
+        **IKKE egnet for:**
+        - Predikering av valgresultater
+        - Kausal slutning om politiske årsaksforhold
+        - Generalisering til befolkningen som helhet
+        - Presise målinger av partiforskjeller
+        
+        **Best practices:**
+        1. Kombiner med andre datakilder
+        2. Vurder kontekstuelle faktorer
+        3. Rapporter metodiske begrensninger
+        4. Bruk som utgangspunkt for videre forskning
+        """)
+    
+    with st.expander(" Filosofiske refleksjoner"):
+        st.markdown("""
+        ### Hva kan vi egentlig vite?
+        
+        **Epistemologiske spørsmål:**
+        - Kan vi objektivt måle "datakvalitet"?
+        - Reflekterer partiposisjoner "sanne" politiske standpunkter?
+        - Hvor mye påvirker spørsmålsformulering svarene?
+        
+        **Etiske betraktninger:**
+        - Risiko for å forsterke eksisterende bias
+        - Ansvar ved automatisering av politiske vurderinger
+        - Transparens vs. kompleksitet i AI-systemer
+        
+        **Pragmatiske kompromisser:**
+        - Perfekt objektivitet er umulig, men vi kan strebe etter transparens
+        - Forenklede modeller kan være nyttige selv om de ikke er komplette
+        - Kritisk tenkning er viktigere enn algoritmisk presisjon
+        """)
+
+with tab2:
     st.header("Hvilke spørsmål skaper mest uenighet?")
     
     create_explanation_card(
@@ -428,7 +638,7 @@ with tab1:
             Dette skaper stor "uenighet" som vi måler statistisk.
             """)
 
-with tab2:
+with tab3:
     st.header("Sammenlign NRK og TV2")
     
     create_explanation_card(
@@ -529,7 +739,7 @@ with tab2:
         
         with col1:
             st.metric(
-                "NRK: Spørsmål med bred enighet",
+                "NRK: Spørsmål med bred enighet(std<0,5)",
                 f"{(nrk_polarization['disagreement'] < 0.5).sum()}/{len(nrk_polarization)}"
             )
             st.metric(
@@ -539,7 +749,7 @@ with tab2:
         
         with col2:
             st.metric(
-                "TV2: Spørsmål med bred enighet",
+                "TV2: Spørsmål med bred enighet(std<0,5)",
                 f"{(tv2_polarization['disagreement'] < 0.5).sum()}/{len(tv2_polarization)}"
             )
             st.metric(
@@ -682,7 +892,7 @@ with tab2:
                 for i, (party, score) in enumerate(tv2_simple.items(), 1):
                     st.write(f"{i}. {party}: {score:.1f}")
 
-with tab3:
+with tab4:
     st.header("Temaoversikt fra TV2")
     
     if 'Kategori' not in tv2.columns:
@@ -781,7 +991,7 @@ with tab3:
             for i, (tema, stats) in enumerate(topic_controversy.head(3).iterrows(), 1):
                 st.write(f"{i}. **{tema}** - Uenighet: {stats['Gj_uenighet']:.2f} ({stats['Antall_sporsmal']} spørsmål)")
 
-with tab4:
+with tab5:
     st.header("⚖️ Hva skjer hvis vi vekter tema ulikt?")
     
     create_tv2_only_explanation()
@@ -792,6 +1002,8 @@ with tab4:
         "Hva skjer hvis vi gir økonomi-spørsmål dobbelt så mye vekt som andre tema?",
         "⚖️"
     )
+    
+    create_score_interpretation_box()
     
     if 'Kategori' not in tv2.columns:
         st.error("Denne analysen krever TV2-data med kategorier")
@@ -813,89 +1025,150 @@ with tab4:
         
         # Original scores
         original_scores = subset[parties].sum()
+        original_averages = subset[parties].mean()
         
         # Weighted scores
         weights = subset['Kategori'].apply(lambda cat: weight_factor if cat == boost_category else 1.0)
         weighted_scores = (subset[parties].multiply(weights, axis=0)).sum()
+        # Calculate weighted averages properly
+        total_weight = weights.sum()
+        weighted_averages = weighted_scores / total_weight * len(subset) * weight_factor / (weight_factor - 1 + len(subset[subset['Kategori'] != boost_category]) / len(subset))
         
         # Create comparison
         comparison = pd.DataFrame({
-            "Før_vekting": original_scores,
-            "Etter_vekting": weighted_scores,
-            "Endring": weighted_scores - original_scores,
-            "Endring_pst": ((weighted_scores - original_scores) / original_scores * 100).round(1)
-        }).sort_values("Før_vekting", ascending=False)
+            "Før_vekting_sum": original_scores,
+            "Før_vekting_snitt": original_averages,
+            "Etter_vekting_sum": weighted_scores,
+            "Etter_vekting_snitt": weighted_scores / len(subset),  # Simplified average
+            "Endring_sum": weighted_scores - original_scores,
+            "Endring_snitt": (weighted_scores / len(subset)) - original_averages
+        }).sort_values("Før_vekting_sum", ascending=False)
         
         col_left, col_right = st.columns([2.5, 1.5])
         
         with col_left:
+            # Toggle between sum and average view
+            show_averages = st.toggle("Vis gjennomsnitt per spørsmål i stedet for totalsummer", value=True)
+            
             create_how_to_read_box("party_comparison")
             
             fig = go.Figure()
+            
+            if show_averages:
+                y_col_before = "Før_vekting_snitt" 
+                y_col_after = "Etter_vekting_snitt"
+                y_title = "Gjennomsnittlig posisjon per spørsmål"
+                title_suffix = "(gjennomsnitt per spørsmål)"
+            else:
+                y_col_before = "Før_vekting_sum"
+                y_col_after = "Etter_vekting_sum"  
+                y_title = "Total score"
+                title_suffix = "(totalsummer)"
             
             # Before weighting
             fig.add_trace(go.Bar(
                 name='Før vekting',
                 x=comparison.index,
-                y=comparison["Før_vekting"],
+                y=comparison[y_col_before],
                 marker_color=COL_NEU,
-                text=[f"{val:.0f}" for val in comparison["Før_vekting"]],
-                textposition='auto'
+                text=[f"{val:.1f}" for val in comparison[y_col_before]],
+                textposition='auto',
+                hovertemplate="<b>%{x}</b><br>" +
+                             f"Før vekting: %{{y:.2f}}<br>" +
+                             "<extra></extra>"
             ))
             
             # After weighting  
             fig.add_trace(go.Bar(
                 name=f'Etter {weight_factor}× vekt på "{boost_category}"',
                 x=comparison.index,
-                y=comparison["Etter_vekting"],
+                y=comparison[y_col_after],
                 marker_color=COL_POS,
-                text=[f"{val:.0f}" for val in comparison["Etter_vekting"]],
-                textposition='auto'
+                text=[f"{val:.1f}" for val in comparison[y_col_after]],
+                textposition='auto',
+                hovertemplate="<b>%{x}</b><br>" +
+                             f"Etter vekting: %{{y:.2f}}<br>" +
+                             "<extra></extra>"
             ))
             
             fig.update_layout(
-                title=f"Effekt av å vektlegge '{boost_category}' {weight_factor}× høyere",
+                title=f"Effekt av å vektlegge '{boost_category}' {weight_factor}× høyere {title_suffix}",
                 xaxis_title="Partier",
-                yaxis_title="Samlet score",
+                yaxis_title=y_title,
                 barmode='group',
                 xaxis_tickangle=45,
                 plot_bgcolor=BG, paper_bgcolor=BG
             )
             
             st.plotly_chart(fig, use_container_width=True)
+            
+            # Show scale context
+            if show_averages:
+                st.info(f"""
+                🔍 **Skala-kontekst:** Gjennomsnitt på skala -2.0 til +2.0
+                • **-2.0** = Konsekvent imot alle forslagene
+                • **0.0** = Nøytral/balansert
+                • **+2.0** = Konsekvent for alle forslagene
+                """)
+            else:
+                st.info(f"""
+                🔍 **Skala-kontekst:** Over {len(subset)} spørsmål  
+                • **-{len(subset)*2}** = Maksimalt imot (alle -2)
+                • **0** = Nøytral/balansert  
+                • **+{len(subset)*2}** = Maksimalt for (alle +2)
+                """)
         
         with col_right:
             st.subheader("Vektings-påvirkning")
             
-            max_change = comparison["Endring"].abs().max()
-            most_affected = comparison.loc[comparison["Endring"].abs().idxmax()]
+            change_col = "Endring_snitt" if show_averages else "Endring_sum"
+            max_change = comparison[change_col].abs().max()
+            most_affected = comparison.loc[comparison[change_col].abs().idxmax()]
             
-            st.metric("Største endring", f"{most_affected['Endring']:+.1f} poeng")
+            change_value = most_affected[change_col]
+            change_format = f"{change_value:+.2f}" if show_averages else f"{change_value:+.1f}"
+            
+            st.metric("Største endring", f"{change_format} {'per spm' if show_averages else 'poeng'}")
             st.metric("Mest påvirket parti", most_affected.name)
-            st.metric("Gjennomsnittlig endring", f"{comparison['Endring'].mean():+.1f} poeng")
+            
+            avg_change = comparison[change_col].mean()
+            avg_format = f"{avg_change:+.2f}" if show_averages else f"{avg_change:+.1f}"
+            st.metric("Gjennomsnittlig endring", f"{avg_format} {'per spm' if show_averages else 'poeng'}")
             
             # Count questions in boosted category
             category_questions = subset[subset['Kategori'] == boost_category].shape[0]
             st.metric("Spørsmål i vektet tema", f"{category_questions}/{len(subset)}")
             
-            # Impact assessment
-            if max_change > 5:
+            # Impact assessment - adjust thresholds based on view type
+            threshold_major = 0.3 if show_averages else 5
+            threshold_minor = 0.1 if show_averages else 2
+            
+            if max_change > threshold_major:
                 st.warning(f"⚠️ Stor påvirkning! Vekting av '{boost_category}' endrer rangeringer betydelig.")
-            elif max_change > 2:
+            elif max_change > threshold_minor:
                 st.info(f"📊 Moderat påvirkning fra vekting av '{boost_category}'.")
             else:
                 st.success(f"✅ Minimal påvirkning fra vekting av '{boost_category}'.")
             
         # Detailed results
         with st.expander("📋 Detaljerte endringer"):
-            display_comparison = comparison[["Før_vekting", "Etter_vekting", "Endring", "Endring_pst"]].copy()
-            display_comparison.columns = ["Før vekting", "Etter vekting", "Endring (poeng)", "Endring (%)"]
-            display_comparison["Retning"] = display_comparison["Endring (poeng)"].apply(
-                lambda x: "📈 Økt" if x > 0.5 else "📉 Redusert" if x < -0.5 else "➡️ Uendret"
+            if show_averages:
+                display_cols = ["Før_vekting_snitt", "Etter_vekting_snitt", "Endring_snitt"]
+                column_names = ["Før vekting (snitt)", "Etter vekting (snitt)", "Endring (per spørsmål)"]
+            else:
+                display_cols = ["Før_vekting_sum", "Etter_vekting_sum", "Endring_sum"]  
+                column_names = ["Før vekting (sum)", "Etter vekting (sum)", "Endring (poeng)"]
+            
+            display_comparison = comparison[display_cols].copy()
+            display_comparison.columns = column_names
+            
+            threshold = 0.05 if show_averages else 0.5
+            display_comparison["Retning"] = display_comparison[column_names[2]].apply(
+                lambda x: "📈 Økt" if x > threshold else "📉 Redusert" if x < -threshold else "➡️ Uendret"
             )
             st.dataframe(display_comparison, use_container_width=True)
 
-with tab5:
+with tab6:
     st.header("Hva om vi fjerner et tema helt?")
     
     create_tv2_only_explanation()
@@ -905,6 +1178,8 @@ with tab5:
         "Noen ganger er det nyttig å se hva som skjer hvis vi ignorerer visse tema helt. " +
         "For eksempel: Hvordan ser partiene ut hvis vi ser bort fra alle økonomi-spørsmål?"
     )
+    
+    create_score_interpretation_box()
     
     if 'Kategori' not in tv2.columns:
         st.error("Denne analysen krever TV2-data med kategorier")
@@ -923,69 +1198,118 @@ with tab5:
         without_category = tv2[tv2['Kategori'] != remove_category].head(n_questions_scenario)
         
         full_scores = full_data[parties].sum()
+        full_averages = full_data[parties].mean()
         reduced_scores = without_category[parties].sum()
+        reduced_averages = without_category[parties].mean()
         
         scenario_comparison = pd.DataFrame({
-            "Med_alle_tema": full_scores,
-            f"Uten_{remove_category}": reduced_scores,
-            "Endring": reduced_scores - full_scores,
-            "Endring_pst": ((reduced_scores - full_scores) / full_scores * 100).round(1)
-        }).sort_values("Med_alle_tema", ascending=False)
+            "Med_alle_tema_sum": full_scores,
+            "Med_alle_tema_snitt": full_averages,
+            f"Uten_{remove_category}_sum": reduced_scores,
+            f"Uten_{remove_category}_snitt": reduced_averages,
+            "Endring_sum": reduced_scores - full_scores,
+            "Endring_snitt": reduced_averages - full_averages
+        }).sort_values("Med_alle_tema_sum", ascending=False)
         
         col_left, col_right = st.columns([2.5, 1.5])
         
         with col_left:
+            # Toggle between sum and average view  
+            show_averages_scenario = st.toggle("Vis gjennomsnitt per spørsmål i stedet for totalsummer", value=True, key="scenario_avg_toggle")
+            
             fig_scenario = go.Figure()
+            
+            if show_averages_scenario:
+                y_col_full = "Med_alle_tema_snitt"
+                y_col_reduced = f"Uten_{remove_category}_snitt"
+                y_title = "Gjennomsnittlig posisjon per spørsmål"
+                title_suffix = "(gjennomsnitt per spørsmål)"
+            else:
+                y_col_full = "Med_alle_tema_sum"
+                y_col_reduced = f"Uten_{remove_category}_sum"
+                y_title = "Total score"
+                title_suffix = "(totalsummer)"
             
             # With all themes
             fig_scenario.add_trace(go.Bar(
                 name='Med alle tema',
                 x=scenario_comparison.index,
-                y=scenario_comparison["Med_alle_tema"],
+                y=scenario_comparison[y_col_full],
                 marker_color=COL_NEU,
-                text=[f"{val:.0f}" for val in scenario_comparison["Med_alle_tema"]],
-                textposition='auto'
+                text=[f"{val:.1f}" for val in scenario_comparison[y_col_full]],
+                textposition='auto',
+                hovertemplate="<b>%{x}</b><br>" +
+                             f"Med alle tema: %{{y:.2f}}<br>" +
+                             "<extra></extra>"
             ))
             
             # Without selected theme
             fig_scenario.add_trace(go.Bar(
                 name=f'Uten "{remove_category}"',
                 x=scenario_comparison.index, 
-                y=scenario_comparison[f"Uten_{remove_category}"],
+                y=scenario_comparison[y_col_reduced],
                 marker_color=COL_NEG,
-                text=[f"{val:.0f}" for val in scenario_comparison[f"Uten_{remove_category}"]],
-                textposition='auto'
+                text=[f"{val:.1f}" for val in scenario_comparison[y_col_reduced]],
+                textposition='auto',
+                hovertemplate="<b>%{x}</b><br>" +
+                             f"Uten {remove_category}: %{{y:.2f}}<br>" +
+                             "<extra></extra>"
             ))
             
             fig_scenario.update_layout(
-                title=f"Scenario: Hva om vi fjerner alle spørsmål om '{remove_category}'?",
+                title=f"Scenario: Hva om vi fjerner alle spørsmål om '{remove_category}'? {title_suffix}",
                 xaxis_title="Partier",
-                yaxis_title="Samlet score",
+                yaxis_title=y_title,
                 barmode='group',
                 xaxis_tickangle=45,
                 plot_bgcolor=BG, paper_bgcolor=BG
             )
             
             st.plotly_chart(fig_scenario, use_container_width=True)
+            
+            # Show scale context
+            if show_averages_scenario:
+                st.info(f"""
+                🔍 **Skala-kontekst:** Gjennomsnitt på skala -2.0 til +2.0
+                • **-2.0** = Konsekvent imot alle forslagene
+                • **0.0** = Nøytral/balansert
+                • **+2.0** = Konsekvent for alle forslagene
+                """)
+            else:
+                remaining_q = len(without_category)
+                st.info(f"""
+                🔍 **Skala-kontekst:** Med alle tema: {len(full_data)} spm, Uten '{remove_category}': {remaining_q} spm
+                • **-{len(full_data)*2}** til **-{remaining_q*2}** = Maksimalt imot (alle -2)
+                • **0** = Nøytral/balansert  
+                • **+{remaining_q*2}** til **+{len(full_data)*2}** = Maksimalt for (alle +2)
+                """)
         
         with col_right:
             st.subheader("🎯 Scenario-konsekvenser")
             
-            max_impact = scenario_comparison["Endring"].abs().max()
-            most_impacted = scenario_comparison.loc[scenario_comparison["Endring"].abs().idxmax()]
+            change_col = "Endring_snitt" if show_averages_scenario else "Endring_sum"
+            max_impact = scenario_comparison[change_col].abs().max()
+            most_impacted = scenario_comparison.loc[scenario_comparison[change_col].abs().idxmax()]
             
-            st.metric("Største påvirkning", f"{most_impacted['Endring']:+.1f} poeng")
+            impact_value = most_impacted[change_col]
+            impact_format = f"{impact_value:+.2f}" if show_averages_scenario else f"{impact_value:+.1f}"
+            
+            st.metric("Største påvirkning", f"{impact_format} {'per spm' if show_averages_scenario else 'poeng'}")
             st.metric("Mest påvirket parti", most_impacted.name)
             
             # Count removed questions
             removed_questions = full_data[full_data['Kategori'] == remove_category].shape[0]
             st.metric("Spørsmål fjernet", f"{removed_questions}/{len(full_data)}")
             
+            # Impact assessment - adjust thresholds based on view type  
+            threshold_major = 0.3 if show_averages_scenario else 5
+            threshold_minor = 0.1 if show_averages_scenario else 2
+            
             if removed_questions == 0:
                 st.info("ℹ️ Ingen spørsmål i dette temaet")
-            elif max_impact < 2:
+            elif max_impact < threshold_minor:
                 st.success(f"✅ Minimal påvirkning av å fjerne '{remove_category}'")
-            elif max_impact < 5:
+            elif max_impact < threshold_major:
                 st.warning(f"⚠️ Moderat påvirkning av å fjerne '{remove_category}'") 
             else:
                 st.error(f"🚨 Stor påvirkning! '{remove_category}' er viktig for partirangeringen.")
@@ -993,14 +1317,18 @@ with tab5:
         # Rankings change analysis
         st.subheader("🏆 Endringer i rangering")
         
-        full_ranking = full_scores.rank(method='min', ascending=False)
-        reduced_ranking = reduced_scores.rank(method='min', ascending=False)
+        if show_averages_scenario:
+            full_ranking = scenario_comparison["Med_alle_tema_snitt"].rank(method='min', ascending=False)
+            reduced_ranking = scenario_comparison[f"Uten_{remove_category}_snitt"].rank(method='min', ascending=False)
+        else:
+            full_ranking = scenario_comparison["Med_alle_tema_sum"].rank(method='min', ascending=False)
+            reduced_ranking = scenario_comparison[f"Uten_{remove_category}_sum"].rank(method='min', ascending=False)
         
         ranking_changes = pd.DataFrame({
-            "Parti": parties,
-            "Rangering_før": [full_ranking[p] for p in parties],
-            "Rangering_etter": [reduced_ranking[p] for p in parties],
-            "Endring_i_rangering": [reduced_ranking[p] - full_ranking[p] for p in parties]
+            "Parti": scenario_comparison.index,
+            "Rangering_før": [full_ranking[p] for p in scenario_comparison.index],
+            "Rangering_etter": [reduced_ranking[p] for p in scenario_comparison.index],
+            "Endring_i_rangering": [reduced_ranking[p] - full_ranking[p] for p in scenario_comparison.index]
         }).sort_values("Endring_i_rangering", key=abs, ascending=False)
         
         # Show parties with biggest ranking changes
@@ -1013,8 +1341,27 @@ with tab5:
                 st.write(f"{direction} **{row['Parti']}**: {row['Rangering_før']:.0f}. → {row['Rangering_etter']:.0f}. plass")
         else:
             st.success("✅ Ingen store endringer i partirangering")
+            
+        # Detailed comparison table
+        with st.expander("📊 Detaljert sammenligning"):
+            if show_averages_scenario:
+                display_cols = ["Med_alle_tema_snitt", f"Uten_{remove_category}_snitt", "Endring_snitt"] 
+                column_names = ["Med alle tema (snitt)", f"Uten {remove_category} (snitt)", "Endring (per spørsmål)"]
+            else:
+                display_cols = ["Med_alle_tema_sum", f"Uten_{remove_category}_sum", "Endring_sum"]
+                column_names = ["Med alle tema (sum)", f"Uten {remove_category} (sum)", "Endring (poeng)"]
+            
+            detailed_comparison = scenario_comparison[display_cols].copy()
+            detailed_comparison.columns = column_names
+            
+            threshold = 0.05 if show_averages_scenario else 0.5
+            detailed_comparison["Påvirkning"] = detailed_comparison[column_names[2]].apply(
+                lambda x: "📈 Positiv" if x > threshold else "📉 Negativ" if x < -threshold else "➡️ Minimal"
+            )
+            
+            st.dataframe(detailed_comparison, use_container_width=True)
 
-with tab6:
+with tab7:
     st.header("🤖 AI & Datakvalitet")
     st.write("Utforsk hvordan datakvalitet påvirker AI-resultater gjennom valgomatdata.")
     
@@ -1603,7 +1950,7 @@ Spm2: "Senk skatter" -> +2 (sterkt enig)
             else:  # Kodingsproblemer
                 st.code("""
 Forventet: UTF-8 tekst
-Faktisk: "Feil kÃ¸ding av norske tegn"
+Faktisk: "Feil kÃ¶ding av norske tegn"
 Skulle være: "Feil koding av norske tegn"
                 """, language="text")
             
@@ -1799,175 +2146,6 @@ Ekspert-gjennomgang nødvendig for:
 - Ulike framing av samme tema  
 - Subtile semantiske forskjeller
                     """, language="text")
-
-with tab7:
-    st.header("Metodikk og Transparens")
-    
-    create_explanation_card(
-        "Vårt transparens-prinsipp",
-        "All vår metodikk er åpen og kan granskes. Vi oppfordrer til kritisk vurdering av våre " +
-        "antakelser og metoder. Dette er ikke 'absolutte sannheter', men analytiske verktøy."
-    )
-    
-    # Expandable methodology sections
-    with st.expander("🎯 Hvordan beregner vi datakvalitet?", expanded=True):
-        st.markdown("""
-        ### De 6 dimensjonene av datakvalitet
-        
-        Vår app vurderer datakvalitet langs 6 vitenskapelig anerkjente dimensjoner:
-        
-        #### 1. 🎯 Nøyaktighet (Accuracy)
-        **Hva det måler:** Hvor godt dataene reflekterer virkeligheten  
-        **Beregning:** `100% - (Gj.snitt absolutt forskjell mellom NRK og TV2) / 4 * 100%`  
-        **Logikk:** Hvis to uavhengige kilder gir lignende resultater, øker tilliten til nøyaktighet
-        
-        #### 2. 📋 Kompletthet (Completeness)  
-        **Hva det måler:** Hvor mye av dataene som faktisk er tilgjengelig  
-        **Beregning:** `(Totale celler - Manglende celler) / Totale celler * 100%`  
-        **Logikk:** Manglende data reduserer AI-systemers læringsevne
-        
-        #### 3. 🔄 Konsistens (Consistency)
-        **Hva det måler:** Hvor stabile og ikke-motsigelsesfulle dataene er  
-        **Beregning:** `100% - (Gj.snitt standardavvik * 25)`  
-        **Logikk:** Høy variabilitet kan indikere inkonsistente målinger
-        
-        #### 4. ⏰ Aktualitet (Timeliness)
-        **Hva det måler:** Hvor oppdaterte dataene er  
-        **Beregning:** `100% - (Måneder siden innsamling * 2%)`  
-        **Antakelse:** Data antas 6 mnd gamle, 2% verdifall per måned
-        
-        #### 5. ✅ Validitet (Validity)
-        **Hva det måler:** Om dataene har korrekt format og gyldige verdier  
-        **Beregning:** `Antall verdier i range [-2,+2] / Totale verdier * 100%`  
-        **Logikk:** Valgomatskalaen har definerte grenser
-        
-        #### 6. 🎭 Unikalitet (Uniqueness)
-        **Hva det måler:** Grad av duplikater og overrepresentasjon  
-        **Beregning:** `min(100%, (Antall kategorier * 4) / Totale spørsmål * 100%)`  
-        **Antakelse:** ~4 spørsmål per kategori som optimal balanse
-        """)
-    
-    with st.expander("📊 Kvalitetsvurderingsskala"):
-        st.markdown("""
-        ### Hvordan tolke kvalitetsscorer?
-        
-        **Samlet kvalitetsscore = Gjennomsnitt av alle 6 dimensjoner**
-        
-        | Score | Vurdering | AI-egnethet | Anbefaling |
-        |-------|-----------|-------------|------------|
-        | 90-100% | 🟢 Utmerket | Klar for avanserte AI-analyser | Fortsett som normalt |
-        | 75-89% | 🟡 God | Brukbar for de fleste AI-applikasjoner | Vurder forbedringer |
-        | 60-74% | 🟠 Akseptabel | Krever forbedringer før AI-bruk | Datarengjøring anbefales |
-        | Under 60% | 🔴 Lav | Omfattende datarengjøring nødvendig | Ikke egnet for AI |
-        """)
-    
-    with st.expander("⚠️ Begrensninger og antakelser"):
-        st.markdown("""
-        ### Hva vi IKKE kan måle:
-        - **Faktisk nøyaktighet:** Vi har ingen "fasit" å sammenligne med
-        - **Skjulte bias:** Systematiske skjevheter kan være usynlige  
-        - **Temporal drift:** Hvordan holdninger endrer seg over tid
-        - **Kontekstuelle faktorer:** Politisk klima, mediedekning osv.
-        
-        ### Våre antakelser:
-        - NRK og TV2 er begge relativt pålitelige kilder
-        - 6 måneder gammel data (estimat for valgomatdata)  
-        - 4 spørsmål per kategori er optimalt
-        - Politisk volatilitet på 2% per måned
-        - Standardavvik reflekterer inkonsistens (kan også være legitim variasjon)
-        
-        ### Viktige forbehold:
-        - **Ikke absolutte sannheter:** Våre metoder er analytiske verktøy, ikke objektive målinger
-        - **Kontekst-avhengig:** Kvalitet avhenger av bruksområde og krav
-        - **Forenklede modeller:** Virkeligheten er mer kompleks enn våre algoritmer
-        """)
-    
-    with st.expander("🔬 Vitenskapelig grunnlag"):
-        st.markdown("""
-        ### Forskningsbasert metodikk
-        
-        Våre datakvalitetsdimensjoner er basert på etablert forskning:
-        
-        **Klassiske referanser:**
-        - Wang, R. Y., & Strong, D. M. (1996). "Beyond accuracy: What data quality means to data consumers"
-        - ISO/IEC 25012:2008 - Data Quality Model  
-        - Pipino, L. L., Lee, Y. W., & Wang, R. Y. (2002). "Data quality assessment"
-        
-        **AI og bias-forskning:**
-        - Mehrabi, N., et al. (2021). "A Survey on Bias and Fairness in Machine Learning"
-        - Barocas, S., Hardt, M., & Narayanan, A. (2019). "Fairness and Machine Learning"
-        
-        **Politisk opinion-forskning:**
-        - Krosnick, J. A. (1991). "Response strategies for coping with the cognitive demands of attitude measures"
-        - Tourangeau, R., et al. (2000). "The Psychology of Survey Response"
-        """)
-    
-    with st.expander("💻 Teknisk implementasjon"):
-        st.markdown("""
-        ### Hvordan appen fungerer
-        
-        **Databehandling:**
-        ```python
-        # Eksempel: Beregning av konsistens
-        nrk_std = nrk[parties].std().mean()
-        tv2_std = tv2[parties].std().mean() 
-        avg_std = (nrk_std + tv2_std) / 2
-        consistency = max(0, 100 - avg_std * 25)
-        ```
-        
-        **Visualisering:**
-        - Plotly for interaktive grafer
-        - Streamlit for brukergrensesnitt
-        - Pandas for datamanipulasjon
-        
-        **Ytelse:**
-        - Caching av datainnlasting (@st.cache_data)
-        - Begrenset til 50 punkter i scatter plots for responsivitet
-        - Lazy loading av tunge beregninger
-        """)
-    
-    with st.expander("🎯 Bruksanvisning for forskere"):
-        st.markdown("""
-        ### Hvordan bruke appen i forskning
-        
-        **Egnet for:**
-        - Eksplorativ dataanalyse av politiske holdninger
-        - Identifisering av kontroversielle politiske tema  
-        - Sammenligning av mediekilders politiske profiler
-        - Undervisning i datakvalitet og AI-bias
-        
-        **IKKE egnet for:**
-        - Predikering av valgresultater
-        - Kausal slutning om politiske årsaksforhold
-        - Generalisering til befolkningen som helhet
-        - Presise målinger av partiforskjeller
-        
-        **Best practices:**
-        1. Kombiner med andre datakilder
-        2. Vurder kontekstuelle faktorer
-        3. Rapporter metodiske begrensninger
-        4. Bruk som utgangspunkt for videre forskning
-        """)
-    
-    with st.expander(" Filosofiske refleksjoner"):
-        st.markdown("""
-        ### Hva kan vi egentlig vite?
-        
-        **Epistemologiske spørsmål:**
-        - Kan vi objektivt måle "datakvalitet"?
-        - Reflekterer partiposisjoner "sanne" politiske standpunkter?
-        - Hvor mye påvirker spørsmålsformulering svarene?
-        
-        **Etiske betraktninger:**
-        - Risiko for å forsterke eksisterende bias
-        - Ansvar ved automatisering av politiske vurderinger
-        - Transparens vs. kompleksitet i AI-systemer
-        
-        **Pragmatiske kompromisser:**
-        - Perfekt objektivitet er umulig, men vi kan strebe etter transparens
-        - Forenklede modeller kan være nyttige selv om de ikke er komplette
-        - Kritisk tenkning er viktigere enn algoritmisk presisjon
-        """)
 
 # Footer with methodology
 st.divider()
