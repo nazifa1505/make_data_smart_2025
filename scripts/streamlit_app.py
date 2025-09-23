@@ -1,4 +1,4 @@
-# streamlit_app.py - Improved User-Friendly Valgomat Analysis - CORRECTED VERSION
+
 import os
 import math
 import textwrap
@@ -9,6 +9,15 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import streamlit as st
 from plotly.subplots import make_subplots
+
+from sklearn.cluster import KMeans, DBSCAN
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import silhouette_score
+import seaborn as sns
 
 # Configuration and color scheme
 BG = "#fcf6ee"
@@ -169,7 +178,7 @@ def add_source_selection_guidance():
         st.write("• Du vil bruke vektings- eller scenario-analyser")
         st.write("• Du foretrekker færre, men kategoriserte spørsmål")
         
-        st.warning("⚠️ **Husk:** Kan ikke sammenlignes direkte!")
+        st.warning(" **Husk:** Kan ikke sammenlignes direkte!")
 
 def add_comparison_blocker():
     """Add visual element that prevents comparison thinking"""
@@ -177,7 +186,7 @@ def add_comparison_blocker():
     <div style="background: linear-gradient(45deg, #ff6b6b, #feca57); 
                 padding: 10px; border-radius: 10px; text-align: center; 
                 font-weight: bold; color: white; margin: 20px 0;">
-        ⚠️ NRK og TV2 har forskjellige spørsmål - IKKE sammenlign tallene! ⚠️
+         NRK og TV2 har forskjellige spørsmål - IKKE sammenlign tallene! 
     </div>
     """, unsafe_allow_html=True)
 
@@ -269,7 +278,7 @@ def prep_data_with_friendly_labels(df, parties):
     out["disagreement"] = out[parties].std(axis=1)
     out["disagreement_squared"] = out[parties].var(axis=1)
     
-    # User-friendly labels
+    
     out["direction_label"] = out["avg_position"].apply(lambda x:
         "Sterkt støttende" if x > 1.0 else
         "Moderat støttende" if x > 0.3 else
@@ -305,7 +314,7 @@ def calculate_quality_scores(parties, nrk, tv2):
     """Calculate actual data quality scores - CORRECTED VERSION"""
     scores = {}
     
-    # 1. CORRECTED: Intern konsistens instead of invalid cross-source comparison
+    
     nrk_party_consistency = []
     tv2_party_consistency = []
     
@@ -342,7 +351,7 @@ def calculate_quality_scores(parties, nrk, tv2):
     completeness = 1 - (missing_cells / total_cells) if total_cells > 0 else 1
     scores["Kompletthet"] = max(0, min(100, completeness * 100))
     
-    # 3. CORRECTED: Balanse instead of problematic "Konsistens"
+    
     all_values = pd.concat([nrk[parties].stack(), tv2[parties].stack()]).dropna()
     if len(all_values) > 0:
         value_distribution = all_values.value_counts(normalize=True)
@@ -365,7 +374,6 @@ def calculate_quality_scores(parties, nrk, tv2):
         validity = 95
     scores["Validitet"] = validity
     
-    # 6. CORRECTED: Kildebalanse instead of problematic "Unikalitet"
     nrk_contribution = len(nrk) / (len(nrk) + len(tv2))
     balance_deviation = abs(nrk_contribution - 0.5)
     source_balance = max(0, 100 - balance_deviation * 200)
@@ -391,25 +399,25 @@ parties, nrk, tv2 = load_files()
 st.title("🗳️ Valgomat-utforsker")
 st.subheader("Utforsk hvordan norske partier posisjonerer seg politisk")
 
-# CORRECTED: Enhanced data context warning at the top
+
 create_enhanced_data_warning()
 
-# Navigation tabs with clearer names - Metodikk first
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "📖 Metodikk",
-    "🎯 Hva splitter partiene?", 
+    "🎯 Hva splitter partiene?",
     "⚖️ Kildeforskjeller (IKKE sammenlign verdier!)",
     "📋 Temaoversikt (TV2)",
     "⚖️ Vektingseffekter", 
     "📈 Scenario-analyse",
-    "🤖 AI & Datakvalitet"
+    "🤖 AI & Datakvalitet",
+    "🧠 AI-Analyser"  
 ])
 
 with tab1:
     st.header("Metodikk og Transparens")
     
     create_explanation_card(
-        "Vårt transparens-prinsipp",
+        "Prosess",
         "All vår metodikk er åpen og kan granskes. Vi oppfordrer til kritisk vurdering av våre " +
         "antakelser og metoder. Dette er ikke 'absolutte sannheter', men analytiske verktøy."
     )
@@ -530,48 +538,8 @@ with tab1:
         - Lazy loading av tunge beregninger
         """)
     
-    with st.expander("🎯 Bruksanvisning for forskere"):
-        st.markdown("""
-        ### Hvordan bruke appen i forskning
-        
-        **Egnet for:**
-        - Eksplorativ dataanalyse av politiske holdninger
-        - Identifisering av kontroversielle politiske tema  
-        - Sammenligning av mediekilders politiske profiler (separat)
-        - Undervisning i datakvalitet og AI-bias
-        
-        **IKKE egnet for:**
-        - Predikering av valgresultater
-        - Kausal slutning om politiske årsaksforhold
-        - Generalisering til befolkningen som helhet
-        - Direkte sammenligning av NRK og TV2 verdier
-        
-        **Best practices:**
-        1. Analyser hver kilde separat
-        2. Vurder kontekstuelle faktorer
-        3. Rapporter metodiske begrensninger
-        4. Bruk som utgangspunkt for videre forskning
-        """)
     
-    with st.expander("🤔 Filosofiske refleksjoner"):
-        st.markdown("""
-        ### Hva kan vi egentlig vite?
-        
-        **Epistemologiske spørsmål:**
-        - Kan vi objektivt måle "datakvalitet"?
-        - Reflekterer partiposisjoner "sanne" politiske standpunkter?
-        - Hvor mye påvirker spørsmålsformulering svarene?
-        
-        **Etiske betraktninger:**
-        - Risiko for å forsterke eksisterende bias
-        - Ansvar ved automatisering av politiske vurderinger
-        - Transparens vs. kompleksitet i AI-systemer
-        
-        **Pragmatiske kompromisser:**
-        - Perfekt objektivitet er umulig, men vi kan strebe etter transparens
-        - Forenklede modeller kan være nyttige selv om de ikke er komplette
-        - Kritisk tenkning er viktigere enn algoritmisk presisjon
-        """)
+    
 
 with tab2:
     st.header("Hvilke spørsmål skaper mest uenighet?")
@@ -583,7 +551,7 @@ with tab2:
         "🔍"
     )
     
-    # Add source selection guidance to sidebar - CORRECTED
+    
     add_source_selection_guidance()
     
     with st.sidebar:
@@ -593,7 +561,7 @@ with tab2:
         top_k = st.slider("Vis topp-punkter", 5, 15, 8)
         show_numbers = st.toggle("Vis nummerering på punkter", value=True)
 
-    # Select and prepare data - CORRECTED to use source-specific approach
+    
     df = prep_data_with_friendly_labels(current_data, parties)
     
     col_left, col_right = st.columns([3, 2])
@@ -605,7 +573,7 @@ with tab2:
         df["color"] = df["avg_position"].apply(color_map)
         df["size"] = size_scale(df["disagreement_squared"])
         
-        # Create the plot with source-specific title - CORRECTED
+     
         fig = px.scatter(
             df.head(50),  # Limit to first 50 for performance
             x="avg_position", 
@@ -701,11 +669,9 @@ with tab2:
 with tab3:
     st.header("Sammenlign datakilder - Strukturelt")
     
-    # CORRECTED: Complete replacement of Tab 3 with structural comparison only
     add_comparison_blocker()
 
     
-    # Structural comparison instead of value comparison
     comparison_type = st.radio("Hva vil du sammenligne?", [
         "📊 Datastruktur og omfang",
         "🎯 Separate polariseringsanalyser", 
@@ -812,7 +778,7 @@ with tab3:
         st.info("💡 **Viktig:** Disse listene viser kontrovers innenfor hver kilde separat. " +
                "De kan ikke sammenlignes direkte siden spørsmålene er forskjellige.")
         
-    else:  # Separate trendanalyser - CORRECTED
+    else:  
         st.subheader("Separate dataanalyser")
         
         source_choice = st.selectbox("Velg kilde å analysere:", ["NRK (252 spørsmål)", "TV2 (98 spørsmål med kategorier)"])
@@ -826,7 +792,7 @@ with tab3:
             source_name = "TV2"
             st.info("🔍 Analyserer kun TV2-data")
         
-        # CORRECTED: Fixed party positions visualization
+        
         valid_parties = [p for p in parties if p in current_data.columns and not current_data[p].isna().all()]
 
         if len(valid_parties) == 0:
@@ -999,7 +965,7 @@ with tab4:
             else:
                 st.success("✅ Godt balanserte tema")
         
-        # Topic-wise controversy analysis - CORRECTED
+        
         st.subheader("Hvilke tema skaper mest uenighet?")
         
         tv2_with_analysis = prep_data_with_friendly_labels(tv2, parties)
@@ -1048,14 +1014,14 @@ with tab4:
             
             st.plotly_chart(fig_controversy, use_container_width=True)
             
-            # Alternativ tabell-visning hvis graf er forvirrende
+            
             st.subheader("📊 Detaljert uenighets-tabell")
             display_table = topic_controversy.copy()
             display_table['Uenighet_pct'] = (display_table['Gj_uenighet'] * 100 / display_table['Gj_uenighet'].max()).round(1)
             display_table.columns = ['Gj. uenighet', 'Maks uenighet', 'Antall spm', 'Relativ uenighet (%)']
             st.dataframe(display_table, use_container_width=True)
             
-            # Vis topp kontroversielle tema med bedre formatting
+           
             st.write("**Mest kontroversielle tema:**")
             for i, (tema, stats) in enumerate(topic_controversy.head(3).iterrows(), 1):
                 uenighet_pct = (stats['Gj_uenighet'] / topic_controversy['Gj_uenighet'].max() * 100)
@@ -1399,8 +1365,8 @@ with tab6:
                 st.error(f"🚨 Stor påvirkning!")
 
 with tab7:
-    st.header("🤖 AI & Datakualitet")
-    st.write("Utforsk hvordan datakualitet påvirker AI-resultater gjennom valgomatdata.")
+    st.header("🤖 AI & Datakvalitet")
+    st.write("Utforsk hvordan datakvalitet påvirker AI-resultater gjennom valgomatdata.")
     
     create_explanation_card(
         "Hvorfor er datakvalitet viktig?",
@@ -1469,7 +1435,7 @@ with tab7:
                 clicked_score = quality_scores[selected_dimension]
                 st.success(f"🎯 **{selected_dimension}** valgt: {clicked_score:.0f}%")
                 
-                # Show detailed information about selected dimension - CORRECTED
+                
                 dimension_details = {
                     "Intern_konsistens": {
                         "description": "Måler hvor konsistente partier er i sine posisjoner",
@@ -1542,7 +1508,7 @@ with tab7:
             
             st.info(f"**Anbefaling:** {recommendation}")
             
-            # Show top/bottom dimensions
+            
             score_df = pd.DataFrame({"Dimensjon": dimensions, "Score": scores}).sort_values("Score", ascending=False)
             
             st.write("**🏆 Best:**")
@@ -1567,7 +1533,6 @@ with tab7:
             "⚠️", "warning"
         )
         
-        # Show consistency analysis for both sources separately - CORRECTED
         col1, col2 = st.columns(2)
         
         with col1:
@@ -2212,26 +2177,655 @@ Skulle være: "Feil koding av norske tegn"
             else:
                 st.warning("⚠️ Vektingen forverrer ubalansen")
 
-# Footer with methodology - CORRECTED
-st.divider()
-create_explanation_card(
-    "Om metodikken", 
-    """
-    **Datakilder:** Partisvar på valgomatspørsmål fra NRK (252 spm) og TV2 (98 spm)
-    
-    **Kritiske begrensninger:** 
-    • Vi har kun partienes offisielle standpunkter, ikke velgernes svar
-    • **NRK og TV2 har FORSKJELLIGE spørsmål** - kan ikke sammenlignes direkte
-    • Analyser viser politiske mønstre innenfor hver kilde, ikke absolutte "sannheter"
-    
-    **Statistiske mål:**
-    • Gjennomsnitt viser om partiene lener mot støtte eller motstand (per kilde)
-    • Uenighet måles som standardavvik mellom partiers posisjoner (per kilde)
-    • Høyere uenighet = mer kontroversielt/splittende spørsmål (innenfor kilden)
-    
-    **Åpen kildekode:** All kode og metodikk er tilgjengelig for granskning og forbedring.
-    """,
-    "📖"
-)
+    def perform_party_clustering(df, parties, n_clusters=4):
+        """Cluster partier basert på deres politiske posisjoner"""
+        # Forbered data: partier som rader, spørsmål som kolonner
+        party_data = df[parties].T.fillna(0)
+        
+        # Standardiser data
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(party_data)
+        
+        # KMeans clustering
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        party_clusters = kmeans.fit_predict(scaled_data)
+        
+        # Beregn silhouette score for kvalitet
+        sil_score = silhouette_score(scaled_data, party_clusters)
+        
+        # DBSCAN som alternativ
+        dbscan = DBSCAN(eps=0.5, min_samples=2)
+        dbscan_clusters = dbscan.fit_predict(scaled_data)
+        
+        return {
+            'kmeans_clusters': party_clusters,
+            'dbscan_clusters': dbscan_clusters,
+            'silhouette_score': sil_score,
+            'scaled_data': scaled_data,
+            'party_names': parties
+        }
 
-st.caption("💡 Tips: Klikk på grafene for å utforske interaktivt. Bruk faner for å se ulike analyser.")
+    def perform_pca_analysis_with_interpretation(df, parties, n_components=3):
+        """Finn underliggende politiske dimensjoner med PCA og tolkning"""
+        party_data = df[parties].T.fillna(0)
+        
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(party_data)
+        
+        pca = PCA(n_components=n_components)
+        pca_result = pca.fit_transform(scaled_data)
+        
+        # Analyser komponenter
+        components_df = pd.DataFrame(
+            pca.components_.T,
+            columns=[f'PC{i+1}' for i in range(n_components)],
+            index=df.index
+        )
+        
+        
+        dimension_interpretations = interpret_pca_dimensions(components_df, df, n_components)
+        
+        return {
+            'pca_result': pca_result,
+            'explained_variance': pca.explained_variance_ratio_,
+            'components': components_df,
+            'party_names': parties,
+            'dimension_names': dimension_interpretations  
+        }
+
+    def interpret_pca_dimensions(components_df, df, n_components, top_n=5):
+        """Tolkér PCA-dimensjoner basert på spørsmål med høyeste loadings"""
+        
+        interpretations = {}
+        
+        for i in range(n_components):
+            pc_name = f'PC{i+1}'
+            
+            # Finn spørsmål med høyest absoluttverdi loading for denne komponenten
+            loadings = components_df[pc_name].abs().sort_values(ascending=False)
+            top_questions = loadings.head(top_n)
+            
+            # Hent tekst for disse spørsmålene
+            top_question_texts = []
+            for idx in top_questions.index:
+                question_text = df.loc[idx].get('Smp', df.loc[idx].get('Spm', f'Spørsmål {idx}'))
+                loading_value = components_df.loc[idx, pc_name]
+                top_question_texts.append({
+                    'text': question_text,
+                    'loading': loading_value,
+                    'abs_loading': abs(loading_value)
+                })
+            
+            # Forsøk å tolke basert på mønster
+            suggested_name = suggest_dimension_name(top_question_texts, pc_name)
+            
+            interpretations[pc_name] = {
+                'suggested_name': suggested_name,
+                'top_questions': top_question_texts,
+                'original_name': pc_name
+            }
+        
+        return interpretations
+
+    def suggest_dimension_name(top_questions, original_name):
+        """Foreslå et meningsfullt navn basert på spørsmålsmønster"""
+        
+        # Enkel keyword-basert tolkning
+        all_text = ' '.join([q['text'].lower() for q in top_questions])
+        
+        # FIXED: Mer spesifikke og unike kategorier
+        # Økonomiske nøkkelord - mer spesifikke
+        if any(word in all_text for word in ['skatt', 'avgift', 'inntekt', 'lønn']):
+            return "Skatte- og inntektspolitikk"
+        elif any(word in all_text for word in ['arbeid', 'jobb', 'ledig', 'pensjon']):
+            return "Arbeids- og velferdspolitikk"
+        
+        # Sosial/liberal nøkkelord  
+        elif any(word in all_text for word in ['abort', 'familie', 'barn', 'mor', 'far']):
+            return "Familie- og verdipolitikk"
+        elif any(word in all_text for word in ['innvandring', 'integrering', 'flyktning', 'asyl']):
+            return "Innvandrings- og integreringspolitikk"
+        
+        # Miljø/klima nøkkelord
+        elif any(word in all_text for word in ['miljø', 'klima', 'co2', 'utslipp']):
+            return "Miljø- og klimapolitikk"
+        elif any(word in all_text for word in ['energi', 'olje', 'strøm', 'kraft']):
+            return "Energipolitikk"
+        
+        # Stat vs marked nøkkelord
+        elif any(word in all_text for word in ['privat', 'offentlig', 'marked', 'konkurranse']):
+            return "Stat vs. Marked"
+        
+        # EU/internasjonalt nøkkelord
+        elif any(word in all_text for word in ['eu', 'europa', 'nato', 'utenriks']):
+            return "Internasjonal orientering"
+        
+        # Helse og utdanning
+        elif any(word in all_text for word in ['helse', 'sykehus', 'lege', 'behandling']):
+            return "Helsepolitikk"
+        elif any(word in all_text for word in ['skole', 'utdanning', 'lærer', 'elev']):
+            return "Utdanningspolitikk"
+        
+        # Fallback til mer beskrivende navn
+        return f"Politisk dimensjon {original_name[-1]}"
+
+    def visualize_pca_with_meaningful_names(pca_results, st):
+        """Visualiser PCA-resultater med tolkede dimensjonsnavn"""
+        
+        # Vis forklart varians med tolkede navn
+        variance_data = []
+        for i, variance in enumerate(pca_results['explained_variance']):
+            pc_key = f'PC{i+1}'
+            meaningful_name = pca_results['dimension_names'][pc_key]['suggested_name']
+            variance_data.append({
+                'Dimensjon': f"{meaningful_name} ({pc_key})",  # Legg til PC-nummer for å unngå forvirring
+                'Original': pc_key,
+                'Forklart_Varians': variance * 100
+            })
+        
+        variance_df = pd.DataFrame(variance_data)
+        
+        
+        fig_variance = px.bar(
+            variance_df, 
+            x='Dimensjon', 
+            y='Forklart_Varians',
+            title=f"Politiske dimensjoner funnet av AI ({len(variance_data)} dimensjoner)",
+            labels={'Forklart_Varians': 'Prosent av total variasjon'},
+            text='Forklart_Varians'
+        )
+        fig_variance.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        fig_variance.update_layout(
+            xaxis_tickangle=45,
+            xaxis_title="Dimensjon",
+            height=400  # Sett fast høyde
+        )
+        st.plotly_chart(fig_variance, use_container_width=True)
+        
+        # Vis total forklart varians
+        total_variance = sum(variance_data[i]['Forklart_Varians'] for i in range(len(variance_data)))
+        st.info(f"🎯 **Total forklart varians: {total_variance:.1f}%** ({len(variance_data)} dimensjoner)")
+        
+        
+    def enhanced_pca_analysis_tab(current_data_ai, parties):
+        """Erstatning for PCA-delen i tab8"""
+        
+        col1, col2 = st.columns([1, 3])
+        
+        with col1:
+            n_dimensions = st.slider("Antall dimensjoner", 2, 4, 3)
+            run_pca = st.button("🚀 Kjør PCA-Analyse")
+            
+            # Manuell override for dimensjonsnavn
+            st.subheader("🎯 Manuel justering")
+            manual_names = {}
+            
+            
+            if 'pca_done' in st.session_state and 'pca_results' in st.session_state:
+                existing_results = st.session_state.pca_results
+                available_dimensions = list(existing_results['dimension_names'].keys())
+                
+                # Only create inputs for dimensions that exist in the stored results
+                for i, pc_key in enumerate(available_dimensions):
+                    dimension_num = i + 1
+                    manual_names[pc_key] = st.text_input(
+                        f"Navn for dimensjon {dimension_num}:", 
+                        value=existing_results['dimension_names'][pc_key]['suggested_name'],
+                        key=f'manual_dim_{dimension_num}'
+                    )
+                
+                # Show info if user requests more dimensions than currently available
+                if n_dimensions > len(available_dimensions):
+                    st.info(f"💡 For å få {n_dimensions} dimensjoner, kjør PCA-analyse på nytt")
+        
+        with col2:
+            if run_pca:
+                with st.spinner("AI finner politiske dimensjoner..."):
+                    pca_results = perform_pca_analysis_with_interpretation(current_data_ai, parties, n_dimensions)
+                
+                # Lagre i session state
+                st.session_state.pca_results = pca_results
+                st.session_state.pca_done = True
+                st.session_state.pca_dimensions = n_dimensions  # Store number of dimensions used
+                
+                # Initialize dimension names in session state
+                for i, pc_key in enumerate([f'PC{j+1}' for j in range(n_dimensions)]):
+                    st.session_state[f'dim_{i+1}_name'] = pca_results['dimension_names'][pc_key]['suggested_name']
+                
+                st.success(f"✅ AI fant {n_dimensions} politiske dimensjoner!")
+                
+                # Vis resultatene
+                visualize_pca_with_meaningful_names(pca_results, st)
+                
+                # 2D visualisering med meningsfulle navn
+                if n_dimensions >= 2:
+                    st.subheader("Partier i 2D politisk rom")
+                    
+                    dim1_name = pca_results['dimension_names']['PC1']['suggested_name']
+                    dim2_name = pca_results['dimension_names']['PC2']['suggested_name']
+                    
+                    party_coords = pd.DataFrame({
+                        'Parti': pca_results['party_names'],
+                        dim1_name: pca_results['pca_result'][:, 0],
+                        dim2_name: pca_results['pca_result'][:, 1]
+                    })
+                    
+                    fig_2d = px.scatter(
+                        party_coords, x=dim1_name, y=dim2_name,
+                        text='Parti', title="Partier i AI-oppdaget politisk rom",
+                        labels={
+                            dim1_name: f'{dim1_name} ({pca_results["explained_variance"][0]*100:.1f}%)',
+                            dim2_name: f'{dim2_name} ({pca_results["explained_variance"][1]*100:.1f}%)'
+                        }
+                    )
+                    fig_2d.update_traces(textposition="top center")
+                    fig_2d.update_layout(plot_bgcolor=BG, paper_bgcolor=BG)
+                    st.plotly_chart(fig_2d, use_container_width=True)
+            
+            # Vis eksisterende resultater hvis tilgjengelig
+            elif 'pca_results' in st.session_state:
+                pca_results = st.session_state.pca_results
+                
+                # FIXED: Only update names for dimensions that exist
+                if manual_names:
+                    for pc_key, manual_name in manual_names.items():
+                        if manual_name.strip() and pc_key in pca_results['dimension_names']:
+                            pca_results['dimension_names'][pc_key]['suggested_name'] = manual_name
+                
+                visualize_pca_with_meaningful_names(pca_results, st)
+                
+                if len(pca_results['pca_result'][0]) >= 2:
+                    dim1_name = pca_results['dimension_names']['PC1']['suggested_name']
+                    dim2_name = pca_results['dimension_names']['PC2']['suggested_name']
+                    
+                    party_coords = pd.DataFrame({
+                        'Parti': pca_results['party_names'],
+                        dim1_name: pca_results['pca_result'][:, 0],
+                        dim2_name: pca_results['pca_result'][:, 1]
+                    })
+                    
+                    fig_2d = px.scatter(
+                        party_coords, x=dim1_name, y=dim2_name,
+                        text='Parti', title="Partier i politisk rom (med tolkede dimensjoner)"
+                    )
+                    fig_2d.update_traces(textposition="top center")
+                    fig_2d.update_layout(plot_bgcolor=BG, paper_bgcolor=BG)
+                    st.plotly_chart(fig_2d, use_container_width=True)
+        
+        return manual_names
+
+    def create_recommendation_system(df, parties):
+        """Lag et enkelt anbefalingssystem"""
+        def recommend_parties(user_answers, top_n=3):
+            """
+            user_answers: dict med spørsmål_index: svar_verdi
+            """
+            if len(user_answers) == 0:
+                return []
+            
+            # Konverter brukerinput til vektor
+            user_vector = np.zeros(len(df))
+            for q_idx, answer in user_answers.items():
+                if q_idx < len(user_vector):
+                    user_vector[q_idx] = answer
+            
+            # Beregn similaritet med alle partier
+            party_similarities = {}
+            for party in parties:
+                if party in df.columns:
+                    party_positions = df[party].fillna(0).values
+                    # Kun sammenlign på spørsmål brukeren har svart på
+                    answered_indices = list(user_answers.keys())
+                    if len(answered_indices) > 0:
+                        user_subset = [user_vector[i] for i in answered_indices]
+                        party_subset = [party_positions[i] for i in answered_indices]
+                        
+                        similarity = cosine_similarity([user_subset], [party_subset])[0][0]
+                        party_similarities[party] = similarity
+            
+            # Returner topp-N mest like partier
+            sorted_parties = sorted(party_similarities.items(), 
+                                key=lambda x: x[1], reverse=True)
+            return sorted_parties[:top_n]
+        
+        return recommend_parties
+
+    def train_controversy_classifier(df, parties):
+        """Tren en modell til å klassifisere spørsmål som kontroversielle"""
+        # Beregn kontroversialitet (standardavvik)
+        df_analysis = prep_data_with_friendly_labels(df, parties)
+        
+        # Lag features basert på tekstlengde og andre egenskaper
+        features = []
+        labels = []
+        
+        for idx, row in df_analysis.iterrows():
+            # Enkle features (kan utvides)
+            question_text = row.get('Spm', '') or row.get('Smp', '')
+            feature_vector = [
+                len(question_text),  # Tekstlengde
+                len(question_text.split()),  # Antall ord
+                question_text.count('?'),  # Antall spørsmålstegn
+                row['avg_position'],  # Gjennomsnittlig posisjon
+                row['disagreement']  # Uenighet (target for klassifisering)
+            ]
+            features.append(feature_vector[:-1])  # Ikke bruk disagreement som feature
+            
+            # Klassifiser som kontroversielt hvis disagreement > median
+            is_controversial = row['disagreement'] > df_analysis['disagreement'].median()
+            labels.append(int(is_controversial))
+        
+        # Tren modell
+        X_train, X_test, y_train, y_test = train_test_split(
+            features, labels, test_size=0.3, random_state=42
+        )
+        
+        clf = RandomForestClassifier(n_estimators=100, random_state=42)
+        clf.fit(X_train, y_train)
+        
+        # Evaluer
+        accuracy = clf.score(X_test, y_test)
+        
+        return {
+            'model': clf,
+            'accuracy': accuracy,
+            'feature_names': ['Tekstlengde', 'Antall_ord', 'Spørsmålstegn', 'Avg_posisjon']
+        }
+
+    with tab8:
+        st.header("🤖AI-Analyser")
+        
+        create_explanation_card(
+            "Fra statistikk til kunstig intelligens",
+            "Nå bruker vi ekte machine learning algoritmer på valgomatdataene. " +
+            "Vi kan clustere partier, finne skjulte dimensjoner og bygge anbefalingssystemer.",
+            "🧠"
+        )
+        
+        # Dataset selector for AI analysis
+        with st.sidebar:
+            st.subheader("AI-Innstillinger")
+            source_name_ai, current_data_ai = safe_dataset_selector("ai_analysis")
+        
+        ai_analysis_type = st.selectbox(
+        "Velg AI-analyse:",
+        ["🎯 Parti-Clustering", "📊 Politiske Dimensjoner (PCA)", 
+        "💡 Anbefalingssystem", "🔍 Kontrovers-Klassifisering"]
+)
+        
+        if ai_analysis_type == "🎯 Parti-Clustering":
+            st.subheader("Automatisk gruppering av partier")
+            
+            create_explanation_card(
+                "Hva er clustering?",
+                "AI-algoritmer kan automatisk finne partier som har like politiske mønstre " +
+                "uten at vi forteller dem hva de skal lete etter. Dette kan avsløre skjulte " +
+                "politiske allianser eller ideologiske grupperinger.",
+                "🤔"
+            )
+            
+            col1, col2 = st.columns([1, 3])
+            
+            with col1:
+                n_clusters = st.slider("Antall grupper", 2, 6, 4)
+                run_clustering = st.button("🚀 Kjør AI-Clustering")
+            
+            with col2:
+                if run_clustering:
+                    with st.spinner("AI analyserer partimønstre..."):
+                        results = perform_party_clustering(current_data_ai, parties, n_clusters)
+                    
+                    st.success(f"✅ AI fant {n_clusters} partigrupper!")
+                    st.metric("Clustering-kvalitet (Silhouette)", f"{results['silhouette_score']:.3f}")
+                    
+                    # Visualiser clustering-resultater
+                    col_viz1, col_viz2 = st.columns(2)
+                    
+                    with col_viz1:
+                        # KMeans resultater
+                        cluster_df = pd.DataFrame({
+                            'Parti': results['party_names'],
+                            'KMeans_Gruppe': results['kmeans_clusters']
+                        })
+                        
+                        fig_kmeans = px.scatter(
+                            cluster_df, x=range(len(cluster_df)), y='KMeans_Gruppe',
+                            color='KMeans_Gruppe', text='Parti',
+                            title="KMeans Parti-Gruppering",
+                            labels={'x': 'Parti-indeks', 'y': 'Gruppe'}
+                        )
+                        fig_kmeans.update_traces(textposition="top center")
+                        fig_kmeans.update_layout(plot_bgcolor=BG, paper_bgcolor=BG)
+                        st.plotly_chart(fig_kmeans, use_container_width=True)
+                    
+                    with col_viz2:
+                        # Vis gruppe-medlemskap
+                        st.write("**AI-oppdagede partigrupper:**")
+                        for group_id in range(n_clusters):
+                            group_parties = [
+                                party for i, party in enumerate(results['party_names'])
+                                if results['kmeans_clusters'][i] == group_id
+                            ]
+                            if group_parties:
+                                st.write(f"**Gruppe {group_id + 1}:** {', '.join(group_parties)}")
+                    
+                    # Fortolk resultatene
+                    st.subheader("🔍 AI-tolkninger")
+                    
+                    if results['silhouette_score'] > 0.5:
+                        st.success("🟢 Tydelige partigrupper funnet - AI ser klare mønstre")
+                    elif results['silhouette_score'] > 0.3:
+                        st.warning("🟡 Moderate partigrupper - noen overlappende mønstre")
+                    else:
+                        st.error("🔴 Svake partigrupper - partier er politisk spredte")
+        
+        elif ai_analysis_type == "📊 Politiske Dimensjoner (PCA)":
+            st.subheader("Finn skjulte politiske dimensjoner")
+            
+            create_explanation_card(
+                "Hva er PCA?",
+                "Principal Component Analysis kan finne de mest viktige 'dimensjonene' " +
+                "i politikken - som økonomi-akse, liberal-konservativ akse, etc. " +
+                "AI vil også forsøke å gi dimensjonene meningsfulle navn basert på " +
+                "hvilke spørsmål som påvirker dem mest.",
+                "📈"
+            )
+            
+            # Bruk den forbedrede PCA-analysen
+            enhanced_pca_analysis_tab(current_data_ai, parties)
+            
+            # Vis totalt forklart varians hvis resultater finnes
+            if 'pca_results' in st.session_state:
+                pca_results = st.session_state.pca_results
+                total_variance = pca_results['explained_variance'].sum() * 100
+                st.metric(f"Total politisk kompleksitet fanget", f"{total_variance:.1f}%")
+                
+                if total_variance > 70:
+                    st.success("🟢 AI fanger mye av den politiske kompleksiteten")
+                elif total_variance > 50:
+                    st.warning("🟡 AI fanger en del, men politikk er kompleks")
+                else:
+                    st.error("🔴 Politikk er svært kompleks - trenger flere dimensjoner")
+        
+        elif ai_analysis_type == "💡 Anbefalingssystem":
+            st.subheader("Bygg din egen AI-drevne valgomat")
+            
+            create_explanation_card(
+                "Hvordan fungerer AI-anbefalinger?",
+                "Du kan svare på noen spørsmål, og AI-en vil bruke cosine similarity " +
+                "til å finne hvilke partier som er mest like dine svar. Dette er samme " +
+                "type algoritme som Netflix bruker til å anbefale filmer!",
+                "🎬"
+            )
+            
+            # Lag anbefalingssystem
+            recommend_func = create_recommendation_system(current_data_ai, parties)
+            
+            st.subheader("Test AI-anbefalingssystemet")
+            st.write("Svar på noen spørsmål og få AI-drevne partianbefalinger:")
+            
+            # Velg noen representative spørsmål
+            sample_questions = current_data_ai.head(8)
+            user_answers = {}
+            
+            col1, col2 = st.columns(2)
+            
+            for i, (idx, row) in enumerate(sample_questions.iterrows()):
+                question_text = row.get('Smp', row.get('Spm', f'Spørsmål {idx}'))
+                short_question = question_text[:60] + "..." if len(question_text) > 60 else question_text
+                
+                with col1 if i % 2 == 0 else col2:
+                    answer = st.select_slider(
+                        short_question,
+                        options=[-2, -1, 0, 1, 2],
+                        format_func=lambda x: {-2: "Sterkt uenig", -1: "Uenig", 0: "Nøytral", 
+                                            1: "Enig", 2: "Sterkt enig"}[x],
+                        value=0,
+                        key=f"q_{idx}"
+                    )
+                    user_answers[idx] = answer
+            
+            if st.button("🤖 Få AI-anbefalinger"):
+                with st.spinner("AI analyserer dine politiske preferanser..."):
+                    recommendations = recommend_func(user_answers, top_n=5)
+                
+                if recommendations:
+                    st.success("🎯 AI har analysert dine svar!")
+                    
+                    st.subheader("Dine mest kompatible partier:")
+                    for i, (party, similarity) in enumerate(recommendations, 1):
+                        compatibility = similarity * 100
+                        
+                        col_rank, col_party, col_score = st.columns([0.5, 2, 1])
+                        with col_rank:
+                            st.write(f"**{i}.**")
+                        with col_party:
+                            st.write(f"**{party}**")
+                        with col_score:
+                            if compatibility > 80:
+                                st.success(f"{compatibility:.1f}%")
+                            elif compatibility > 60:
+                                st.warning(f"{compatibility:.1f}%")
+                            else:
+                                st.error(f"{compatibility:.1f}%")
+                    
+                    # Visualiser anbefalinger
+                    rec_df = pd.DataFrame(recommendations, columns=['Parti', 'Similaritet'])
+                    rec_df['Kompatibilitet_%'] = rec_df['Similaritet'] * 100
+                    
+                    fig_rec = px.bar(
+                        rec_df, x='Kompatibilitet_%', y='Parti',
+                        orientation='h',
+                        title="AI-beregnet partikompatibilitet",
+                        color='Kompatibilitet_%',
+                        color_continuous_scale=get_consistent_color_scale()
+                    )
+                    fig_rec.update_layout(plot_bgcolor=BG, paper_bgcolor=BG)
+                    st.plotly_chart(fig_rec, use_container_width=True)
+                else:
+                    st.error("AI klarte ikke å lage anbefalinger. Prøv å svare på flere spørsmål.")
+        
+        else:  # Kontrovers-klassifisering
+            st.subheader("AI-klassifisering av kontroversielle spørsmål")
+            
+            create_explanation_card(
+                "Kan AI forutsi kontrovers?",
+                "Vi kan trene en Random Forest-klassifiserer til å gjenkjenne " +
+                "kontroversielle spørsmål basert på tekstegenskaper. Dette viser " +
+                "hvordan AI kan lære mønstre fra data.",
+                "🌲"
+            )
+            
+            if st.button("🚀 Tren AI-klassifiserer"):
+                with st.spinner("AI lærer å gjenkjenne kontroversielle spørsmål..."):
+                    classifier_results = train_controversy_classifier(current_data_ai, parties)
+                
+                st.success(f"✅ AI-modell trent med {classifier_results['accuracy']:.1%} nøyaktighet!")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.metric("AI-nøyaktighet", f"{classifier_results['accuracy']:.1%}")
+                    
+                    if classifier_results['accuracy'] > 0.8:
+                        st.success("🟢 AI er svært god til å forutsi kontrovers")
+                    elif classifier_results['accuracy'] > 0.7:
+                        st.warning("🟡 AI er ganske god til å forutsi kontrovers")
+                    else:
+                        st.error("🔴 AI har vansker med å forutsi kontrovers")
+                
+                with col2:
+                    # Vis feature importance
+                    importances = classifier_results['model'].feature_importances_
+                    feature_df = pd.DataFrame({
+                        'Feature': classifier_results['feature_names'],
+                        'Viktighet': importances
+                    }).sort_values('Viktighet', ascending=False)
+                    
+                    fig_importance = px.bar(
+                        feature_df, x='Viktighet', y='Feature',
+                        orientation='h',
+                        title="Hva bruker AI til å forutsi kontrovers?",
+                        color='Viktighet',
+                        color_continuous_scale=get_consistent_color_scale()
+                    )
+                    fig_importance.update_layout(plot_bgcolor=BG, paper_bgcolor=BG)
+                    st.plotly_chart(fig_importance, use_container_width=True)
+                
+                # Test AI-en på nye "spørsmål"
+                st.subheader("Test AI-klassifisereren")
+                
+                test_questions = [
+                    "Bør Norge øke skatten for de rikeste?",
+                    "Skal vi ha mer midler til skole?",
+                    "Bør abort være lovlig?",
+                    "Skal politiet ha mer makt?"
+                ]
+                
+                st.write("**AI-prediksjoner for testspørsmål:**")
+                
+                for question in test_questions:
+                    # Lag features for testspørsmål
+                    test_features = [[
+                        len(question),
+                        len(question.split()),
+                        question.count('?'),
+                        0.0  # Avg position (ukjent for testspørsmål)
+                    ]]
+                    
+                    prediction = classifier_results['model'].predict(test_features)[0]
+                    probability = classifier_results['model'].predict_proba(test_features)[0]
+                    
+                    controversy_prob = probability[1] * 100  # Sannsynlighet for kontrovers
+                    
+                    col_q, col_pred = st.columns([3, 1])
+                    with col_q:
+                        st.write(f"'{question}'")
+                    with col_pred:
+                        if prediction == 1:
+                            st.error(f"🔥 Kontroversielt ({controversy_prob:.0f}%)")
+                        else:
+                            st.success(f"✅ Ikke kontroversielt ({100-controversy_prob:.0f}%)")
+        
+        # AI vs Statistikk sammenligning
+        st.divider()
+        st.subheader("🆚 AI vs Tradisjonell statistikk")
+        
+        comparison_data = {
+            "Aspekt": ["Kompleksitet", "Tolkbarhet", "Prediksjonsevne", "Datavolum-krav", "Bias-risiko"],
+            "Statistisk analyse": ["Lav", "Høy", "Moderat", "Lavt", "Lavere"],
+            "AI/ML analyse": ["Høy", "Lav", "Høy", "Høyt", "Høyere"]
+        }
+        
+        comparison_df = pd.DataFrame(comparison_data)
+        st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+        
+        st.info("""
+        💡 **Lærdommer:** 
+        - AI kan finne skjulte mønstre vi ikke ser med tradisjonell statistikk
+        - Men AI er mindre tolkbar - vi forstår ikke alltid hvorfor den gjør det den gjør
+        - Begge tilnærminger har sine styrker og svakheter
+        """)
+    st.divider()
+   
+    st.caption("💡 Tips: Klikk på grafene for å utforske interaktivt. Bruk faner for å se ulike analyser.")
