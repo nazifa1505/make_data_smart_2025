@@ -156,26 +156,20 @@ def create_enhanced_data_warning():
 
 def add_source_selection_guidance():
     """Add clear guidance for source selection"""
-    st.sidebar.markdown("""
-    <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 10px 0;">
-        <h4>📋 Kildeguide</h4>
-        <p><strong>Velg NRK når:</strong></p>
-        <ul style="font-size: 12px;">
-            <li>Du vil se bredest mulig spekter (252 spm)</li>
-            <li>Du vil fokusere på politisk polarisering</li>
-            <li>Du ikke trenger tematisk kategorisering</li>
-        </ul>
+    with st.sidebar:
+        st.info("📋 **Kildeguide**")
         
-        <p><strong>Velg TV2 når:</strong></p>
-        <ul style="font-size: 12px;">
-            <li>Du vil analysere spesifikke tema</li>
-            <li>Du vil bruke vektings- eller scenario-analyser</li>
-            <li>Du foretrekker færre, men kategoriserte spørsmål</li>
-        </ul>
+        st.write("**Velg NRK når:**")
+        st.write("• Du vil se bredest mulig spekter (252 spm)")
+        st.write("• Du vil fokusere på politisk polarisering") 
+        st.write("• Du ikke trenger tematisk kategorisering")
         
-        <p><strong>⚠️ Husk:</strong> Kan ikke sammenlignes direkte!</p>
-    </div>
-    """, unsafe_allow_html=True)
+        st.write("**Velg TV2 når:**")
+        st.write("• Du vil analysere spesifikke tema")
+        st.write("• Du vil bruke vektings- eller scenario-analyser")
+        st.write("• Du foretrekker færre, men kategoriserte spørsmål")
+        
+        st.warning("⚠️ **Husk:** Kan ikke sammenlignes direkte!")
 
 def add_comparison_blocker():
     """Add visual element that prevents comparison thinking"""
@@ -709,13 +703,7 @@ with tab3:
     
     # CORRECTED: Complete replacement of Tab 3 with structural comparison only
     add_comparison_blocker()
-    
-    create_explanation_card(
-        "Kritisk begrensning", 
-        "NRK og TV2 har HELT FORSKJELLIGE spørsmål! Vi kan ikke sammenligne tallverdier direkte. " +
-        "I stedet ser vi på strukturelle forskjeller og separate mønstre.",
-        "", "critical"
-    )
+
     
     # Structural comparison instead of value comparison
     comparison_type = st.radio("Hva vil du sammenligne?", [
